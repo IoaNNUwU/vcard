@@ -17,7 +17,7 @@ func Unmarshal(data []byte, v any) error {
 
 type Decoder struct {
 	r       io.Reader
-	schemas map[string]PreparedSchema
+	schemas map[string]Schema
 }
 
 var defaultSchemas = []Schema{
@@ -27,10 +27,10 @@ var defaultSchemas = []Schema{
 }
 
 func NewDecoder(r io.Reader, schemas []Schema) *Decoder {
-	m := make(map[string]PreparedSchema)
+	m := make(map[string]Schema)
 
 	for _, s := range schemas {
-		m[s.version] = s.Prepare()
+		m[s.version] = s
 	}
 	return &Decoder{
 		r:       r,
@@ -39,6 +39,5 @@ func NewDecoder(r io.Reader, schemas []Schema) *Decoder {
 }
 
 func (d *Decoder) Decode(v any) error {
-
-	return nil
+	panic("TODO: Decode")
 }

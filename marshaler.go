@@ -87,7 +87,7 @@ func (e *Encoder) EncodeSchema(v any, schema Schema) error {
 	b := []byte{}
 
 	// TODO: Cache prepared schema between EncodeSchema() calls
-	ctx := encoderCtx{schema: schema.Prepare()}
+	ctx := encoderCtx{schema: schema}
 
 	b, err := e.encode(b, reflect.ValueOf(v), ctx)
 	if err != nil {
@@ -118,7 +118,7 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 		return []byte{}, fmt.Errorf("vCard: type %s is not supported as a map key. Use string instead", keyKind)
 	}
 
-	for _, req := range ctx.schema.requiredFields {
+	for req := range ctx.schema.requiredFields {
 		if !ma.MapIndex(reflect.ValueOf(req)).IsValid() {
 			return b, fmt.Errorf("vCard: map does not contain field `%s` required by the schema", req)
 		}
@@ -196,7 +196,7 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 func (e *Encoder) encodeStruct(b []byte, struc reflect.Value, ctx encoderCtx) ([]byte, error) {
 
 	// TODO: Cache struct fields lookup
-	for _, req := range ctx.schema.requiredFields {
+	for req := range ctx.schema.requiredFields {
 
 		structField, _ := struc.Type().FieldByName(req)
 		fieldName := structField.Name
@@ -238,7 +238,7 @@ func (e *Encoder) encodeStruct(b []byte, struc reflect.Value, ctx encoderCtx) ([
 			taggedMsg = fmt.Sprintf("tagged `vCard:\"%s\"` ", vCardName)
 		}
 
-		_, exists := ctx.schema.hmap[vCardName]
+		_, exists := ctx.schema.fields[vCardName]
 		if !exists {
 			continue
 		}
@@ -330,8 +330,7 @@ func (e *Encoder) encodeSlice(b []byte, slice reflect.Value, ctx encoderCtx) ([]
 }
 
 type encoderCtx struct {
-	schema     PreparedSchema
-	isTopLevel bool
+	schema Schema
 }
 
 var vCardFieldMarshaler = reflect.TypeFor[VCardFieldMarshaler]()

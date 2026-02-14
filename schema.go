@@ -32,75 +32,43 @@ import (
 //
 //		  vCard.Marshal(MyUser{FN: "Nick"})
 type Schema struct {
-	version        string       // Schema version (e.g. "2.1", "3.0", "4.0")
-	implementation reflect.Type // Type used by reflect to compare with used-defined types.
+	version        string
+	fields         map[string]struct{}
+	requiredFields map[string]struct{}
 }
 
-// Creates a new schema for generic definition
-func NewSchema[T any](version string) Schema {
-	return Schema{version: version, implementation: reflect.TypeFor[T]()}
-}
+// Creates a schema for any struct
+func SchemaFor[T any](version string) Schema {
+	typ := reflect.TypeFor[T]()
 
-// Creates a new schema from provided instance of implementation struct
-func NewSchemaFrom(version string, implementation any) Schema {
-	return Schema{version: version, implementation: reflect.TypeOf(implementation)}
-}
-
-// Simple Schema for string-based vCard 4.0
-var DefaultSchemaV4 = NewSchema[StringSchemaV4]("4.0")
-
-// Simple Schema for string-based vCard 3.0
-var DefaultSchemaV3 = NewSchema[StringSchemaV3]("3.0")
-
-// Simple Schema for string-based vCard 2.1
-var DefaultSchemaV2_1 = NewSchema[StringSchemaV2_1]("2.1")
-
-// Caches schema parameters for fast access in [Marshal]/[Unmarshal]
-func (s Schema) Prepare() PreparedSchema {
-	kind := s.implementation.Kind()
-	if kind != reflect.Struct {
-		panic(fmt.Sprintf("vCard: schema implementation %s is not a struct", kind))
+	if typ.Kind() != reflect.Struct {
+		panic(fmt.Sprintf("vCard: cannot create schema from %s as it is not a struct", typ.Kind()))
 	}
 
-	m := make(map[string]SchemaField)
+	fields := make(map[string]struct{})
+	requiredFields := make(map[string]struct{})
 
-	requiredSlice := []string{}
+	for i := range typ.NumField() {
+		field := typ.Field(i)
 
-	for i := range s.implementation.NumField() {
-		field := s.implementation.Field(i)
-
-		name := field.Name
-		typ := field.Type
-		optional := true
+		fields[field.Name] = struct{}{}
 
 		if strings.Contains(field.Tag.Get("vCard"), "required") {
-			optional = false
-			requiredSlice = append(requiredSlice, name)
+			requiredFields[field.Name] = struct{}{}
 		}
-
-		m[name] = SchemaField{typ: typ, optional: optional}
 	}
 
-	return PreparedSchema{
-		version:        s.version,
-		implementation: s.implementation,
-		hmap:           m,
-		requiredFields: requiredSlice,
-	}
+	return Schema{version, fields, requiredFields}
 }
 
-type PreparedSchema struct {
-	version        string                 // User-defined version from Schema type.
-	implementation reflect.Type           // original type used for reflect.
-	hmap           map[string]SchemaField // all fields in easy-to-use format.
-	requiredFields []string               // cached for better performance.
-}
+// Simple vCard 4.0 schema
+var DefaultSchemaV4 = SchemaFor[StringSchemaV4]("4.0")
 
-type SchemaField struct {
-	typ      reflect.Type
-	optional bool
-}
+// Simple vCard 3.0 schema
+var DefaultSchemaV3 = SchemaFor[StringSchemaV3]("3.0")
 
+// Simple vCard 2.1 schema
+var DefaultSchemaV2_1 = SchemaFor[StringSchemaV2_1]("2.1")
 
 // Simple vCard v4.0 schema implementation from https://en.wikipedia.org/wiki/VCard
 //
@@ -116,12 +84,12 @@ type StringSchemaV4 struct {
 
 	// BEGIN:VCARD - All vCards must start with this property.
 
-	CALADRURI    string   // A URL to use for sending a scheduling request to the person's calendar.
-	CALURI       string   // A URL to the person's calendar.
+	CALADRURI    string // A URL to use for sending a scheduling request to the person's calendar.
+	CALURI       string // A URL to the person's calendar.
 	CATEGORIES   string // A list of "tags" that can be used to describe the person.
-	CLASS        string   // Describes the sensitivity of the information in the vCard.
-	CLIENTPIDMAP string   // Used for synchronizing different revisions of the same vCard.
-	EMAIL        string   // The address for electronic mail communication
+	CLASS        string // Describes the sensitivity of the information in the vCard.
+	CLIENTPIDMAP string // Used for synchronizing different revisions of the same vCard.
+	EMAIL        string // The address for electronic mail communication
 
 	// END:VCARD - All vCards must end with this property.
 
@@ -172,9 +140,7 @@ type StringSchemaV4 struct {
 	UID   string // Specifies a persistent, globally unique identifier associated with the person.
 	URL   string // A URL pointing to a website that represents the person in some way.
 
-	// The version of the vCard specification.
-	// Ignored by [Marshal].
-	VERSION string
+	VERSION string // The version of the vCard specification.
 
 	XML string // Any XML data that is attached to the vCard.
 }
@@ -193,12 +159,12 @@ type StringSchemaV3 struct {
 
 	// BEGIN:VCARD - All vCards must start with this property.
 
-	CALADRURI    string   // A URL to use for sending a scheduling request to the person's calendar.
-	CALURI       string   // A URL to the person's calendar.
-	CATEGORIES   []string // A list of "tags" that can be used to describe the person.
-	CLASS        string   // Describes the sensitivity of the information in the vCard.
-	CLIENTPIDMAP string   // Used for synchronizing different revisions of the same vCard.
-	EMAIL        string   // The address for electronic mail communication
+	CALADRURI    string // A URL to use for sending a scheduling request to the person's calendar.
+	CALURI       string // A URL to the person's calendar.
+	CATEGORIES   string // A list of "tags" that can be used to describe the person.
+	CLASS        string // Describes the sensitivity of the information in the vCard.
+	CLIENTPIDMAP string // Used for synchronizing different revisions of the same vCard.
+	EMAIL        string // The address for electronic mail communication
 
 	// END:VCARD - All vCards must end with this property.
 
@@ -249,7 +215,7 @@ type StringSchemaV3 struct {
 	UID   string // Specifies a persistent, globally unique identifier associated with the person.
 	URL   string // A URL pointing to a website that represents the person in some way.
 
-	// VERSION - The version of the vCard specification.
+	VERSION string // The version of the vCard specification.
 
 	XML string // Any XML data that is attached to the vCard.
 }
@@ -268,12 +234,12 @@ type StringSchemaV2_1 struct {
 
 	// BEGIN:VCARD - All vCards must start with this property.
 
-	CALADRURI    string   // A URL to use for sending a scheduling request to the person's calendar.
-	CALURI       string   // A URL to the person's calendar.
-	CATEGORIES   []string // A list of "tags" that can be used to describe the person.
-	CLASS        string   // Describes the sensitivity of the information in the vCard.
-	CLIENTPIDMAP string   // Used for synchronizing different revisions of the same vCard.
-	EMAIL        string   // The address for electronic mail communication
+	CALADRURI    string // A URL to use for sending a scheduling request to the person's calendar.
+	CALURI       string // A URL to the person's calendar.
+	CATEGORIES   string // A list of "tags" that can be used to describe the person.
+	CLASS        string // Describes the sensitivity of the information in the vCard.
+	CLIENTPIDMAP string // Used for synchronizing different revisions of the same vCard.
+	EMAIL        string // The address for electronic mail communication
 
 	// END:VCARD - All vCards must end with this property.
 
@@ -324,7 +290,7 @@ type StringSchemaV2_1 struct {
 	UID   string // Specifies a persistent, globally unique identifier associated with the person.
 	URL   string // A URL pointing to a website that represents the person in some way.
 
-	// VERSION - The version of the vCard specification.
+	VERSION string // The version of the vCard specification.
 
 	XML string // Any XML data that is attached to the vCard.
 }

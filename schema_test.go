@@ -1,9 +1,6 @@
 package vcardgo
 
-import (
-	"reflect"
-	"testing"
-)
+import "testing"
 
 type TestImplementation struct {
 	N    string
@@ -13,39 +10,22 @@ type TestImplementation struct {
 
 func TestSchemaToMap(t *testing.T) {
 
-	schema := NewSchema[TestImplementation]("3.0")
+	schema := SchemaFor[TestImplementation]("3.0")
 
-	m := schema.Prepare().hmap
-
-	exp := map[string]SchemaField{
-		"N":    {typ: reflect.TypeFor[string](), optional: true},
-		"NAME": {typ: reflect.TypeFor[string](), optional: false},
-		"FN":   {typ: reflect.TypeFor[string](), optional: false},
+	exp := Schema{
+		version: "3.0",
+		fields: map[string]struct{}{
+			"N":    {},
+			"NAME": {},
+			"FN":   {},
+		},
+		requiredFields: map[string]struct{}{
+			"NAME": {},
+			"FN":   {},
+		},
 	}
-	AssertMapsEq(t, m, exp)
+
+	AssertStringsEq(t, schema.version, exp.version)
+	AssertMapsEq(t, schema.fields, exp.fields)
+	AssertMapsEq(t, schema.requiredFields, exp.requiredFields)
 }
-
-func TestSchemaToRequiredSlice(t *testing.T) {
-
-	schema := NewSchema[TestImplementation]("3.0")
-
-	s := schema.Prepare().requiredFields
-
-	exp := []string{"NAME", "FN"}
-
-	AssertSlicesEq(t, s, exp)
-}
-
-func TestEmptySchemaToEmptyMap(t *testing.T) {
-
-	prep := EmptySchema.Prepare()
-	exp := map[string]SchemaField{}
-
-	AssertStringsEq(t, prep.version, "4.0")
-	AssertMapsEq(t, prep.hmap, exp)
-	AssertSlicesEq(t, prep.requiredFields, []string{})
-}
-
-type Empty struct{}
-
-var EmptySchema = NewSchema[Empty]("4.0")

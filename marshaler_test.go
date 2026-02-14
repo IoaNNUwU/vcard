@@ -20,12 +20,16 @@ func TestMapMissingRequiredKey(t *testing.T) {
 		// missing field TEL
 	}
 
-	b, err := MarshalSchema(m, NewSchema[TelRequiredSchema]("4.0"))
+	b, err := MarshalSchema(m, SchemaFor[TelRequiredSchema]("4.0"))
 
 	AssertErr(t, err)
 	AssertStringContains(t, err.Error(), "does not contain field `TEL`")
 	AssertSlicesEq(t, b, []byte{})
 }
+
+type Empty struct{}
+
+var EmptySchema = SchemaFor[Empty]("4.0")
 
 func TestEmptyMap(t *testing.T) {
 
@@ -275,7 +279,7 @@ func TestStructMissingRequiredField(t *testing.T) {
 		FN: ":Alex FullName",
 	}
 
-	b, err := MarshalSchema(stru, NewSchema[TelRequiredSchema]("4.0"))
+	b, err := MarshalSchema(stru, SchemaFor[TelRequiredSchema]("4.0"))
 
 	AssertErr(t, err)
 	AssertStringContains(t, err.Error(), "does not contain field `TEL`")

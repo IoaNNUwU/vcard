@@ -1,0 +1,11 @@
+BEGIN:VCARD
+VERSION:3.0
+N:Doe;John;;;
+FN:John Doe
+ORG:Example Company
+TITLE:Marketing Manager
+TEL;TYPE=WORK,VOICE:(555) 123-4567
+TEL;TYPE=CELL,VOICE:(555) 987-6543
+EMAIL;TYPE=PREF,INTERNET:john.doe@example.com
+URL:https://example.com
+END:VCARD

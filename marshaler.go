@@ -12,11 +12,8 @@ import (
 // Serializes a Go value as a vCard document.
 //
 // Short-hand for Encoder.Encode() with default vCard 4.0 schema.
-//
-// fields of v have to either match the name and the type from the schema or implement
-// Marshaler for custom encoding logic.
 func Marshal(v any) ([]byte, error) {
-	return MarshalSchema(v, DefaultSchemaV4)
+	return MarshalSchema(v, SchemaV4)
 }
 
 func MarshalSchema(v any, schema Schema) ([]byte, error) {
@@ -71,7 +68,7 @@ func (e *Encoder) SetSmartStrings(smartStrings bool) {
 // fields of v have to either match the name and the type from the schema or implement
 // Marshaler for custom encoding logic.
 func (e *Encoder) Encode(v any) error {
-	return e.EncodeSchema(v, DefaultSchemaV4)
+	return e.EncodeSchema(v, SchemaV4)
 }
 
 // Writes a vCard representation of v to the stream using provided Schema.
@@ -142,10 +139,20 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 
 		if !e.smartStrings {
 			for k, v := range m {
+				_, exists := ctx.schema.fields[k]
+				if !exists {
+					continue
+				}
+
 				buf = append(buf, fmt.Sprintf("%s%s\n", k, v)...)
 			}
 		} else {
 			for k, v := range m {
+				_, exists := ctx.schema.fields[k]
+				if !exists {
+					continue
+				}
+
 				if strings.Contains(v, ":") {
 					buf = append(buf, fmt.Sprintf("%s%s\n", k, v)...)
 				} else {
@@ -154,10 +161,16 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 			}
 		}
 	case reflect.Struct:
-		if i.Value().Type().Implements(vCardFieldMarshaler) {
+		if i.Value().Type().Implements(reflect.TypeFor[VCardFieldMarshaler]()) {
 			iter := ma.MapRange()
 			for iter.Next() {
 				k := iter.Key().String()
+
+				_, exists := ctx.schema.fields[k]
+				if !exists {
+					continue
+				}
+
 				v := iter.Value().Interface().(VCardFieldMarshaler)
 
 				field, err := v.MarshalVCardField()
@@ -333,12 +346,10 @@ type encoderCtx struct {
 	schema Schema
 }
 
-var vCardFieldMarshaler = reflect.TypeFor[VCardFieldMarshaler]()
-
 // Implemented by fields that need custom Marshaling logic.
 //
 // Note that this interface defines a way to marshal single field.
-// For example TEL field in your schema has custom type Tel:
+// e.g. TEL field has custom type Tel:
 //
 //	    type MySchemaV4 struct {
 //			FN  string `vCard:"required"`

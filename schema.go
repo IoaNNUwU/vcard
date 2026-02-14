@@ -62,17 +62,24 @@ func SchemaFor[T any](version string) Schema {
 }
 
 // Simple vCard 4.0 schema
-var DefaultSchemaV4 = SchemaFor[StringSchemaV4]("4.0")
+var SchemaV4 = SchemaFor[StringSchemaV4]("4.0")
 
 // Simple vCard 3.0 schema
-var DefaultSchemaV3 = SchemaFor[StringSchemaV3]("3.0")
+var SchemaV3 = SchemaFor[StringSchemaV3]("3.0")
 
 // Simple vCard 2.1 schema
-var DefaultSchemaV2_1 = SchemaFor[StringSchemaV2_1]("2.1")
+var SchemaV2_1 = SchemaFor[StringSchemaV2_1]("2.1")
+
+// Default set of schemas used by [Decoder]
+var DefaultSchemas = []Schema{
+	SchemaV4,
+	SchemaV3,
+	SchemaV2_1,
+}
 
 // Simple vCard v4.0 schema implementation from https://en.wikipedia.org/wiki/VCard
 //
-// Note that this struct can be used as argument in vCard.Unmarshal without
+// Note that this struct can be safely used as argument in vCard.Unmarshal without
 // the need to provide user-defined type.
 //
 // The difference between v4.0 and v3.0 is that N property is optional.

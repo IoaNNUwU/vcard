@@ -64,6 +64,28 @@ END:VCARD
 	AssertStringLinesEq(t, string(b), exp)
 }
 
+func TestMapMoreFields(t *testing.T) {
+
+	m := map[string]string{
+		"N":     ":Alex",
+		"FN":    ":Alex FullName",
+		"NAME":  ":Alex Name Hello",
+		"HELLO": ":World", // Should not be encoded
+	}
+
+	b, _ := Marshal(m)
+
+	exp := `BEGIN:VCARD
+VERSION:4.0
+N:Alex
+FN:Alex FullName
+NAME:Alex Name Hello
+END:VCARD
+`
+	AssertStringLinesEq(t, string(b), exp)
+
+}
+
 func TestMapStringStringSmart(t *testing.T) {
 	m := map[string]string{
 		"N":    "Alex",
@@ -311,6 +333,34 @@ func TestStructStringFields(t *testing.T) {
 		N:    ":Alex",
 		FN:   ":Alex FullName",
 		NAME: ":Alex Name Hello",
+	}
+
+	b, _ := Marshal(s)
+
+	exp := `BEGIN:VCARD
+VERSION:4.0
+N:Alex
+FN:Alex FullName
+NAME:Alex Name Hello
+END:VCARD
+`
+	AssertStringLinesEq(t, string(b), exp)
+}
+
+type MoreStringUser struct {
+	N     string
+	FN    string
+	NAME  string
+	HELLO string
+}
+
+func TestStructMoreFields(t *testing.T) {
+
+	s := MoreStringUser{
+		N:     ":Alex",
+		FN:    ":Alex FullName",
+		NAME:  ":Alex Name Hello",
+		HELLO: ":World",
 	}
 
 	b, _ := Marshal(s)

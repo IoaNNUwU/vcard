@@ -25,7 +25,7 @@ func TestSchemaToMap(t *testing.T) {
 		},
 	}
 
-	AssertStringsEq(t, schema.version, exp.version)
-	AssertMapsEq(t, schema.fields, exp.fields)
-	AssertMapsEq(t, schema.requiredFields, exp.requiredFields)
+	assertStringsEq(t, schema.version, exp.version)
+	assertMapsEq(t, schema.fields, exp.fields)
+	assertMapsEq(t, schema.requiredFields, exp.requiredFields)
 }

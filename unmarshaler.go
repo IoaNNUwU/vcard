@@ -50,6 +50,10 @@ func NewDecoder(r io.Reader, schemas []Schema) *Decoder {
 
 var ErrParse = errors.New("vCard: parsing error in Decoder")
 
+// Decodes a vCard document into pointer v using provided schema.
+//
+// Returns [ErrParse] in case of a malformed bytes from writer.
+//
 // v has to be a pointer to a struct, map or a slice.
 func (d *Decoder) Decode(v any) error {
 	b, err := io.ReadAll(d.r)

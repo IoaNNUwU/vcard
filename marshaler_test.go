@@ -22,9 +22,9 @@ func TestMapMissingRequiredKey(t *testing.T) {
 
 	b, err := MarshalSchema(m, SchemaFor[TelRequiredSchema]("4.0"))
 
-	AssertErr(t, err)
-	AssertStringContains(t, err.Error(), "does not contain field `TEL`")
-	AssertSlicesEq(t, b, []byte{})
+	assertErr(t, err)
+	assertStringContains(t, err.Error(), "does not contain field `TEL`")
+	assertSlicesEq(t, b, []byte{})
 }
 
 type Empty struct{}
@@ -41,7 +41,33 @@ func TestEmptyMap(t *testing.T) {
 VERSION:4.0
 END:VCARD
 `
-	AssertStringsEq(t, string(b), exp)
+	assertStringsEq(t, string(b), crlfy(exp))
+}
+
+func TestCrlfy(t *testing.T) {
+	exp := "Hello\r\nWorld\r\n"
+
+	s1 := "Hello\nWorld"
+	assertStringLinesEq(t, crlfy(s1), exp)
+	assertStringsEq(t, crlfy(s1), exp)
+
+	s2 := `Hello
+World`
+	assertStringLinesEq(t, crlfy(s2), exp)
+	assertStringsEq(t, crlfy(s2), exp)
+}
+
+func TestMapCrlf(t *testing.T) {
+	m := map[string]string{
+		"N":    ":Alex",
+		"FN":   ":Alex FullName",
+		"NAME": ":Alex Name Hello",
+	}
+
+	b, _ := Marshal(m)
+
+	exp := "BEGIN:VCARD\r\nVERSION:4.0\r\nN:Alex\r\nFN:Alex FullName\r\nNAME:Alex Name Hello\r\nEND:VCARD\r\n"
+	assertStringLinesEq(t, string(b), exp)
 }
 
 func TestMapStringString(t *testing.T) {
@@ -61,7 +87,7 @@ FN:Alex FullName
 NAME:Alex Name Hello
 END:VCARD
 `
-	AssertStringLinesEq(t, string(b), exp)
+	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
 func TestMapMoreFields(t *testing.T) {
@@ -82,8 +108,7 @@ FN:Alex FullName
 NAME:Alex Name Hello
 END:VCARD
 `
-	AssertStringLinesEq(t, string(b), exp)
-
+	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
 func TestMapStringStringSmart(t *testing.T) {
@@ -102,7 +127,7 @@ FN:Alex FullName
 NAME:Alex Name Hello
 END:VCARD
 `
-	AssertStringLinesEq(t, string(b), exp)
+	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
 type MarshalVCardImpl struct {
@@ -130,7 +155,7 @@ FN;;Alex FullName;;
 NAME;;Alex Name Hello;;
 END:VCARD
 `
-	AssertStringLinesEq(t, string(b), exp)
+	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
 func TestInterfaceWithCustomMarshaler(t *testing.T) {
@@ -150,7 +175,7 @@ FN;;Alex FullName;;
 NAME;;Alex Name Hello;;
 END:VCARD
 `
-	AssertStringLinesEq(t, string(b), exp)
+	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
 func TestAnyWithCustomMarshaler(t *testing.T) {
@@ -170,7 +195,7 @@ FN;;Alex FullName;;
 NAME;;Alex Name Hello;;
 END:VCARD
 `
-	AssertStringLinesEq(t, string(b), exp)
+	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
 func TestMapWithUnsupportedKey(t *testing.T) {
@@ -182,9 +207,9 @@ func TestMapWithUnsupportedKey(t *testing.T) {
 
 	b, err := Marshal(m)
 
-	AssertErr(t, err)
-	AssertStringContains(t, err.Error(), "type int is not supported as a map key")
-	AssertSlicesEq(t, b, []byte{})
+	assertErr(t, err)
+	assertStringContains(t, err.Error(), "type int is not supported as a map key")
+	assertSlicesEq(t, b, []byte{})
 }
 
 type NotMarshaler struct {
@@ -201,9 +226,9 @@ func TestValueStructDoesNotImplementMarshaler(t *testing.T) {
 
 	b, err := Marshal(m)
 
-	AssertErr(t, err)
-	AssertStringContains(t, err.Error(), "does not implement VCardFieldMarshaler")
-	AssertSlicesEq(t, b, []byte{})
+	assertErr(t, err)
+	assertStringContains(t, err.Error(), "does not implement VCardFieldMarshaler")
+	assertSlicesEq(t, b, []byte{})
 }
 
 func TestMapAnyValueDoesNotImplementMarshaler(t *testing.T) {
@@ -216,9 +241,9 @@ func TestMapAnyValueDoesNotImplementMarshaler(t *testing.T) {
 
 	b, err := Marshal(m)
 
-	AssertErr(t, err)
-	AssertStringContains(t, err.Error(), "does not implement VCardFieldMarshaler")
-	AssertSlicesEq(t, b, []byte{})
+	assertErr(t, err)
+	assertStringContains(t, err.Error(), "does not implement VCardFieldMarshaler")
+	assertSlicesEq(t, b, []byte{})
 }
 
 func TestUnsupportedTypeAsMapValue(t *testing.T) {
@@ -231,15 +256,15 @@ func TestUnsupportedTypeAsMapValue(t *testing.T) {
 
 	b, err := Marshal(m)
 
-	AssertErr(t, err)
-	AssertStringContains(t, err.Error(), "type int is not supported as a map value")
-	AssertSlicesEq(t, b, []byte{})
+	assertErr(t, err)
+	assertStringContains(t, err.Error(), "type int is not supported as a map value")
+	assertSlicesEq(t, b, []byte{})
 }
 
 func TestMarshalEmptySlice(t *testing.T) {
 	sl := []map[string]string{}
 	b, _ := Marshal(sl)
-	AssertSlicesEq(t, b, []byte{})
+	assertSlicesEq(t, b, []byte{})
 }
 
 func TestMarshalSliceOfMaps(t *testing.T) {
@@ -284,7 +309,7 @@ NAME:Alex Name Hello 3
 END:VCARD
 `
 
-	AssertStringLinesEq(t, string(b), exp)
+	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
 // Struct Marshaling Tests
@@ -303,9 +328,9 @@ func TestStructMissingRequiredField(t *testing.T) {
 
 	b, err := MarshalSchema(stru, SchemaFor[TelRequiredSchema]("4.0"))
 
-	AssertErr(t, err)
-	AssertStringContains(t, err.Error(), "does not contain field `TEL`")
-	AssertSlicesEq(t, b, []byte{})
+	assertErr(t, err)
+	assertStringContains(t, err.Error(), "does not contain field `TEL`")
+	assertSlicesEq(t, b, []byte{})
 }
 
 func TestEmptyStruct(t *testing.T) {
@@ -318,7 +343,7 @@ func TestEmptyStruct(t *testing.T) {
 VERSION:4.0
 END:VCARD
 `
-	AssertStringsEq(t, string(b), exp)
+	assertStringsEq(t, string(b), crlfy(exp))
 }
 
 type StringUser struct {
@@ -344,7 +369,7 @@ FN:Alex FullName
 NAME:Alex Name Hello
 END:VCARD
 `
-	AssertStringLinesEq(t, string(b), exp)
+	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
 type MoreStringUser struct {
@@ -372,7 +397,7 @@ FN:Alex FullName
 NAME:Alex Name Hello
 END:VCARD
 `
-	AssertStringLinesEq(t, string(b), exp)
+	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
 func TestStructStringFieldsSmart(t *testing.T) {
@@ -392,7 +417,7 @@ FN:Alex FullName
 NAME:Alex Name Hello
 END:VCARD
 `
-	AssertStringLinesEq(t, string(b), exp)
+	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
 type CustomMarshalerUser struct {
@@ -418,7 +443,7 @@ FN;;Alex FullName;;
 NAME;;Alex Name Hello;;
 END:VCARD
 `
-	AssertStringLinesEq(t, string(b), exp)
+	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
 type CustomMarshalerInterfaceUser struct {
@@ -444,7 +469,7 @@ FN;;Alex FullName;;
 NAME;;Alex Name Hello;;
 END:VCARD
 `
-	AssertStringLinesEq(t, string(b), exp)
+	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
 type AnyUser struct {
@@ -470,7 +495,7 @@ FN;;Alex FullName;;
 NAME;;Alex Name Hello;;
 END:VCARD
 `
-	AssertStringLinesEq(t, string(b), exp)
+	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
 type TagsUser struct {
@@ -496,7 +521,7 @@ FN:Alex FullName
 NAME:Alex Name Hello
 END:VCARD
 `
-	AssertStringLinesEq(t, string(b), exp)
+	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
 func TestStructAnyDoesNotImplementMarshaler(t *testing.T) {
@@ -509,9 +534,9 @@ func TestStructAnyDoesNotImplementMarshaler(t *testing.T) {
 
 	b, err := Marshal(s)
 
-	AssertErr(t, err)
-	AssertStringContains(t, err.Error(), "does not implement VCardFieldMarshaler")
-	AssertSlicesEq(t, b, []byte{})
+	assertErr(t, err)
+	assertStringContains(t, err.Error(), "does not implement VCardFieldMarshaler")
+	assertSlicesEq(t, b, []byte{})
 }
 
 type UnsupportedUser struct {
@@ -530,9 +555,9 @@ func TestStructDoesNotImplementMarshaler(t *testing.T) {
 
 	b, err := Marshal(s)
 
-	AssertErr(t, err)
-	AssertStringContains(t, err.Error(), "does not implement VCardFieldMarshaler")
-	AssertSlicesEq(t, b, []byte{})
+	assertErr(t, err)
+	assertStringContains(t, err.Error(), "does not implement VCardFieldMarshaler")
+	assertSlicesEq(t, b, []byte{})
 }
 
 func TestMarshalSliceOfStructs(t *testing.T) {
@@ -576,5 +601,5 @@ FN;;Alex FullName 3;;
 NAME;;Alex Name Hello 3;;
 END:VCARD
 `
-	AssertStringLinesEq(t, string(b), exp)
+	assertStringLinesEq(t, string(b), crlfy(exp))
 }

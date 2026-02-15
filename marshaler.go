@@ -31,7 +31,8 @@ func MarshalSchema(v any, schema Schema) ([]byte, error) {
 type Encoder struct {
 	w io.Writer
 
-	smartStrings bool
+	smartStrings    bool
+	newlineSequence string
 
 	// TODO: Cache prepared schema between EncodeSchema() calls
 	// TODO: Cache type info between encode() calls
@@ -40,8 +41,9 @@ type Encoder struct {
 // Creates new Encoder that writes to w.
 func NewEncoder(w io.Writer) *Encoder {
 	return &Encoder{
-		smartStrings: true,
-		w:            w,
+		w:               w,
+		smartStrings:    true,
+		newlineSequence: "\r\n",
 	}
 }
 
@@ -61,6 +63,11 @@ func NewEncoder(w io.Writer) *Encoder {
 // You can overcome this limitation by using custom fields implementing [VCardFieldMarshaler] instead of string.
 func (e *Encoder) SetSmartStrings(smartStrings bool) {
 	e.smartStrings = smartStrings
+}
+
+// Sets newline sequence. Defaults to "\r\n" as per vCard RFC https://datatracker.ietf.org/doc/html/rfc6350#section-3.2
+func (e *Encoder) SetNewlineSequence(seq string) {
+	e.newlineSequence = seq
 }
 
 // Writes a vCard representation of v to the stream using default vCard 4.0 schema.
@@ -127,7 +134,7 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 	// In case of an empty map lets write BEGIN:VCARD, VERSION:.. and END:VCARD to simplify debugging
 	// This is only possible for user-defined schema with no required fields
 	if !i.Next() {
-		buf = e.encodeRecordFooter(buf)
+		buf = e.encodeRecordFooter(buf, ctx)
 		return append(b, buf...), nil
 	}
 	// It's better to inspect kind of the first element single time at the start
@@ -144,7 +151,7 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 					continue
 				}
 
-				buf = append(buf, fmt.Sprintf("%s%s\n", k, v)...)
+				buf = append(buf, fmt.Sprintf("%s%s%s", k, v, e.newlineSequence)...)
 			}
 		} else {
 			for k, v := range m {
@@ -154,9 +161,9 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 				}
 
 				if strings.Contains(v, ":") {
-					buf = append(buf, fmt.Sprintf("%s%s\n", k, v)...)
+					buf = append(buf, fmt.Sprintf("%s%s%s", k, v, e.newlineSequence)...)
 				} else {
-					buf = append(buf, fmt.Sprintf("%s:%s\n", k, v)...)
+					buf = append(buf, fmt.Sprintf("%s:%s%s", k, v, e.newlineSequence)...)
 				}
 			}
 		}
@@ -177,7 +184,7 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 				if err != nil {
 					return b, fmt.Errorf("vCard: error during marshaling value for a key `%s`: %w", k, err)
 				}
-				buf = append(buf, fmt.Sprintf("%s%s\n", k, field)...)
+				buf = append(buf, fmt.Sprintf("%s%s%s", k, field, e.newlineSequence)...)
 			}
 		} else {
 			return b, fmt.Errorf("vCard: map value is a struct of type %s which does not implement VCardFieldMarshaler", i.Value().Type())
@@ -196,12 +203,12 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 			if err != nil {
 				return b, fmt.Errorf("vCard: error during marshaling value for a key `%s`: %w", k, err)
 			}
-			buf = append(buf, fmt.Sprintf("%s%s\n", k, field)...)
+			buf = append(buf, fmt.Sprintf("%s%s%s", k, field, e.newlineSequence)...)
 		}
 	default:
 		return b, fmt.Errorf("vCard: type %s is not supported as a map value. Use string or a struct that implements VCardFieldMarshaler", i.Value().Type())
 	}
-	buf = e.encodeRecordFooter(buf)
+	buf = e.encodeRecordFooter(buf, ctx)
 
 	return append(b, buf...), nil
 }
@@ -233,7 +240,7 @@ func (e *Encoder) encodeStruct(b []byte, struc reflect.Value, ctx encoderCtx) ([
 	// In case of an empty struct lets write BEGIN:VCARD, VERSION:.. and END:VCARD to simplify debugging
 	// This is only possible for user-defined schema with no required fields
 	if struc.NumField() == 0 {
-		buf = e.encodeRecordFooter(buf)
+		buf = e.encodeRecordFooter(buf, ctx)
 		return append(b, buf...), nil
 	}
 
@@ -260,12 +267,12 @@ func (e *Encoder) encodeStruct(b []byte, struc reflect.Value, ctx encoderCtx) ([
 		case reflect.String:
 			s := field.String()
 			if !e.smartStrings {
-				buf = append(buf, fmt.Sprintf("%s%s\n", vCardName, s)...)
+				buf = append(buf, fmt.Sprintf("%s%s%s", vCardName, s, e.newlineSequence)...)
 			} else {
 				if strings.Contains(s, ":") {
-					buf = append(buf, fmt.Sprintf("%s%s\n", vCardName, s)...)
+					buf = append(buf, fmt.Sprintf("%s%s%s", vCardName, s, e.newlineSequence)...)
 				} else {
-					buf = append(buf, fmt.Sprintf("%s:%s\n", vCardName, s)...)
+					buf = append(buf, fmt.Sprintf("%s:%s%s", vCardName, s, e.newlineSequence)...)
 				}
 			}
 		case reflect.Struct, reflect.Interface:
@@ -279,24 +286,24 @@ func (e *Encoder) encodeStruct(b []byte, struc reflect.Value, ctx encoderCtx) ([
 			if err != nil {
 				return b, fmt.Errorf("vCard: error during marshaling field `%s` %sof struct %s: %w", fieldDesc.Name, taggedMsg, struc.Type(), err)
 			}
-			buf = append(buf, fmt.Sprintf("%s%s\n", vCardName, fieldBytes)...)
+			buf = append(buf, fmt.Sprintf("%s%s%s", vCardName, fieldBytes, e.newlineSequence)...)
 
 		default:
 			return b, fmt.Errorf("vCard: field `%s` %sof a struct %s has type %s which is not supported. Use string or a struct that implements VCardFieldMarshaler", fieldDesc.Name, taggedMsg, struc.Type(), field.Type())
 		}
 	}
 
-	buf = e.encodeRecordFooter(buf)
+	buf = e.encodeRecordFooter(buf, ctx)
 
 	return append(b, buf...), nil
 }
 
 func (e *Encoder) encodeRecordHeader(b []byte, ctx encoderCtx) []byte {
-	return append(b, fmt.Sprintf("BEGIN:VCARD\nVERSION:%s\n", ctx.schema.version)...)
+	return append(b, fmt.Sprintf("BEGIN:VCARD%sVERSION:%s%s", e.newlineSequence, ctx.schema.version, e.newlineSequence)...)
 }
 
-func (e *Encoder) encodeRecordFooter(b []byte) []byte {
-	return append(b, "END:VCARD\n"...)
+func (e *Encoder) encodeRecordFooter(b []byte, _ encoderCtx) []byte {
+	return append(b, fmt.Sprintf("END:VCARD%s", e.newlineSequence)...)
 }
 
 func (e *Encoder) encodeSlice(b []byte, slice reflect.Value, ctx encoderCtx) ([]byte, error) {

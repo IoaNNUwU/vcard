@@ -13,6 +13,6 @@ END:VCARD
 
 	err := Unmarshal([]byte(ser), e)
 
-	AssertErr(t, err)
-	AssertStringContains(t, err.Error(), "Skibidi")
+	assertErr(t, err)
+	assertStringContains(t, err.Error(), "Skibidi")
 }

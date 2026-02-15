@@ -1,4 +1,4 @@
-package vcardgo
+package vcard
 
 import (
 	"bytes"
@@ -58,7 +58,7 @@ func NewEncoder(w io.Writer) *Encoder {
 // Disabling smart strings encoding will increase performance, but you have to ensure your
 // strings have proper puctuation in them e.g. you will have to deal with ":Name" instead of "Name".
 //
-// You can overcome this limitation by using custom fields implementing VCardMarshaler instead of string.
+// You can overcome this limitation by using custom fields implementing [VCardFieldMarshaler] instead of string.
 func (e *Encoder) SetSmartStrings(smartStrings bool) {
 	e.smartStrings = smartStrings
 }
@@ -106,7 +106,7 @@ func (e *Encoder) encode(b []byte, v reflect.Value, ctx encoderCtx) ([]byte, err
 	case reflect.Array, reflect.Slice:
 		return e.encodeSlice(b, v, ctx)
 	}
-	return b, errors.New("vCard: unable to encode %s type. Use struct, map or a slice")
+	return b, fmt.Errorf("vCard: unable to encode %s type. Use struct, map or a slice", v.Type())
 }
 
 func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte, error) {

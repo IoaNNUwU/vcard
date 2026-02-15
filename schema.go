@@ -1,4 +1,4 @@
-package vcardgo
+package vcard
 
 import (
 	"fmt"
@@ -12,25 +12,6 @@ import (
 //
 // Note that in .vcf specification each record may have different schema depending
 // on it's version, which means you can provide multiple schemas to Decoder.
-//
-// Implementation field will be used by reflect to extract/inject field names and types
-// from/into used-defined types.
-//
-// For example:
-//
-//		  // Schema-type defined by this library
-//		  type StringSchemaV4 struct {
-//		      FN string `vCard:"required"`
-//			     ...
-//		  }
-//
-//		  // User-defined type has to use the name and the type from the Schema
-//	      // or tag a field with `vCard:"FN"`
-//		  type MyUser struct {
-//		      FN string
-//		  }
-//
-//		  vCard.Marshal(MyUser{FN: "Nick"})
 type Schema struct {
 	version        string
 	fields         map[string]struct{}
@@ -57,7 +38,6 @@ func SchemaFor[T any](version string) Schema {
 			requiredFields[field.Name] = struct{}{}
 		}
 	}
-
 	return Schema{version, fields, requiredFields}
 }
 

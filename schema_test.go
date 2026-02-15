@@ -1,4 +1,4 @@
-package vcardgo
+package vcard
 
 import "testing"
 

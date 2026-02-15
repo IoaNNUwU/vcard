@@ -100,6 +100,11 @@ func (d *Decoder) decodeStruct(s string, v reflect.Value) error {
 		return err
 	}
 
+	// Map field name from VCard to its value
+	m := map[string]string
+	
+
+
 	s, err = d.decodeRecordFooter(s)
 	if err != nil {
 		return err

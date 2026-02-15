@@ -9,13 +9,12 @@ import (
 	"strings"
 )
 
-// Serializes a Go value as a vCard document.
-//
-// Short-hand for Encoder.Encode() with default vCard 4.0 schema.
+// Serializes a Go value as a vCard document using default vCard 4.0 schema.
 func Marshal(v any) ([]byte, error) {
 	return MarshalSchema(v, SchemaV4)
 }
 
+// Serializes a Go value as a vCard document using provided [Schema].
 func MarshalSchema(v any, schema Schema) ([]byte, error) {
 	var buf bytes.Buffer
 	enc := NewEncoder(&buf)
@@ -355,7 +354,7 @@ type encoderCtx struct {
 
 // Implemented by fields that need custom Marshaling logic.
 //
-// Note that this interface defines a way to marshal single field.
+// Note that this interface defines a way to marshal a value of single field.
 // e.g. TEL field has custom type Tel:
 //
 //	    type MySchemaV4 struct {

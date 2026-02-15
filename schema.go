@@ -18,7 +18,24 @@ type Schema struct {
 	requiredFields map[string]struct{}
 }
 
-// Creates a schema for any struct
+// Creates a new schema from slice of fields and required fields
+func NewSchema(version string, fields []string, requiredFields []string) Schema {
+	fieldsSet := make(map[string]struct{})
+	reqFieldsSet := make(map[string]struct{})
+
+	for _, field := range fields {
+		fieldsSet[field] = struct{}{}
+	}
+	for _, reqField := range requiredFields {
+		reqFieldsSet[reqField] = struct{}{}
+	}
+	return Schema{version, fieldsSet, reqFieldsSet}
+}
+
+// Creates a schema for any struct. See [StringSchemaV4] as an example.
+//
+// Use tag `vCard:"required"` on a field to make [Encoder] and [Decoder] return errors
+// in case a field was not found.
 func SchemaFor[T any](version string) Schema {
 	typ := reflect.TypeFor[T]()
 

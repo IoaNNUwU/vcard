@@ -12,6 +12,9 @@ import (
 //
 // Note that in .vcf specification each record may have different schema depending
 // on it's version, which means you can provide multiple schemas to Decoder.
+//
+// Built-in schemas are based on https://en.wikipedia.org/wiki/VCard so it is recommended to
+// provide custom set of schemas e.g. if TEL field is required in your case.
 type Schema struct {
 	version        string
 	fields         map[string]struct{}

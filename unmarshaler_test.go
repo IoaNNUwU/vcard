@@ -2,7 +2,7 @@ package vcard
 
 import "testing"
 
-func TestUnmarshalEmptyStruct(t *testing.T) {
+func TestDecEmptyStruct(t *testing.T) {
 
 	e := &Empty{}
 
@@ -11,8 +11,29 @@ VERSION:4.0
 END:VCARD
 `
 
-	err := Unmarshal([]byte(ser), e)
+	err := UnmarshalSchema([]byte(ser), e, []Schema{EmptySchema})
 
-	assertErr(t, err)
-	assertStringContains(t, err.Error(), "Skibidi")
+	assertEq(t, err, nil)
+}
+
+func TestDecStructStringFields(t *testing.T) {
+
+	s := StringUser{}
+
+	text := `BEGIN:VCARD
+VERSION:4.0
+N:Alex
+FN:Alex FullName
+NAME:Alex Name Hello
+END:VCARD
+`
+	_ = Unmarshal([]byte(text), &s)
+
+	exp := StringUser{
+		N:    "Alex",
+		FN:   "Alex FullName",
+		NAME: "Alex Name Hello",
+	}
+
+	assertEq(t, s, exp)
 }

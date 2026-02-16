@@ -175,11 +175,9 @@ func (d *Decoder) decodeStruct(data string, struc reflect.Value) (string, error)
 	if err != nil {
 		return data, err
 	}
-
 	if len(strings.TrimSpace(s)) != 0 {
 		return s, leftTokensErrf("after successfully decoding a struct")
 	}
-
 	return s, nil
 }
 
@@ -256,7 +254,6 @@ func (d *Decoder) fillStruct(struc reflect.Value, m map[string]string, schema Sc
 			return vCardErrf("field %q %sof type %shas unsupported type %s. Use string or struct that implements VCardFieldUnmarshaler", field.Name, taggedMsg, struc.Type(), field.Type)
 		}
 	}
-
 	return nil
 }
 

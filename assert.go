@@ -58,12 +58,6 @@ func assertErrIs(t *testing.T, found error, expected error, substr string) {
 	}
 }
 
-func assertStringContains(t *testing.T, s string, substr string) {
-	if !strings.Contains(s, substr) {
-		t.Errorf("Failed to find substring %q in:\n%s", substr, s)
-	}
-}
-
 // Transforms LF-strings ("\n" as newline character) into CRLF-strings ("\r\n" as newline sequence)
 // This is only used in testing to simplify definition of expected value.
 func crlfy(s string) string {

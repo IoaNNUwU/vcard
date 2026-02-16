@@ -15,3 +15,15 @@ var ErrParsing = fmt.Errorf("%w: parsing error in Decoder", ErrVCard)
 // Signifies decoding was successful but there are more tokens left.
 // This could be the case when trying to decode a document of multiple vCards into a single struct or a map.
 var ErrLeftoverTokens = fmt.Errorf("%w: leftover tokens", ErrParsing)
+
+func vCardErrf(format string, v ...any) error {
+	return fmt.Errorf("%w: %w", ErrVCard, fmt.Errorf(format, v...))
+}
+
+func parsingErrf(format string, v ...any) error {
+	return fmt.Errorf("%w: %w", ErrParsing, fmt.Errorf(format, v...))
+}
+
+func leftTokensErrf(format string, v ...any) error {
+	return fmt.Errorf("%w: %w", ErrLeftoverTokens, fmt.Errorf(format, v...))
+}

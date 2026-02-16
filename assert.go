@@ -1,7 +1,9 @@
 package vcard
 
 import (
+	"errors"
 	"maps"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -47,9 +49,12 @@ func assertMapsEq[K comparable, V comparable](t *testing.T, found map[K]V, expec
 	}
 }
 
-func assertErr(t *testing.T, err error) {
-	if err == nil {
-		t.Error("Expected error")
+func assertErrIs(t *testing.T, found error, expected error, substr string) {
+	if !errors.Is(found, expected) {
+		t.Errorf("Error has wrong type %q but %q was expected", reflect.TypeOf(found), reflect.TypeOf(expected))
+	}
+	if !strings.Contains(found.Error(), substr) {
+		t.Errorf("Error has right type %q but description does not contain %q", reflect.TypeOf(found), substr)
 	}
 }
 

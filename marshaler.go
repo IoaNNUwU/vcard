@@ -2,7 +2,6 @@ package vcard
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -90,7 +89,7 @@ func (e *Encoder) Encode(v any) error {
 // e.g. a string.
 func (e *Encoder) EncodeSchema(v any, schema Schema) error {
 	if v == nil {
-		return errors.New("vCard: cannot encode a nil interface")
+		return vCardErrf("cannot encode a nil interface")
 	}
 	// Intermidiate buffer makes sure there was no errors before writing to io.Writer
 	b := []byte{}
@@ -104,7 +103,7 @@ func (e *Encoder) EncodeSchema(v any, schema Schema) error {
 	}
 	_, err = e.w.Write(b)
 	if err != nil {
-		return fmt.Errorf("vCard: cannot write: %w", err)
+		return vCardErrf("cannot write: %w", err)
 	}
 	return nil
 }
@@ -118,18 +117,17 @@ func (e *Encoder) encode(b []byte, v reflect.Value, ctx encoderCtx) ([]byte, err
 	case reflect.Array, reflect.Slice:
 		return e.encodeSlice(b, v, ctx)
 	}
-	return b, fmt.Errorf("vCard: unable to encode %s type. Use struct, map or a slice", v.Type())
+	return b, vCardErrf("unable to encode %s type. Use struct, map or a slice", v.Type())
 }
 
 func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte, error) {
 	keyKind := ma.Type().Key().Kind()
 	if keyKind != reflect.String {
-		return []byte{}, fmt.Errorf("vCard: type %s is not supported as a map key. Use string instead", keyKind)
+		return []byte{}, vCardErrf("type %s is not supported as a map key. Use string instead", keyKind)
 	}
-
 	for req := range ctx.schema.requiredFields {
 		if !ma.MapIndex(reflect.ValueOf(req)).IsValid() {
-			return b, fmt.Errorf("vCard: map does not contain field %q required by the schema", req)
+			return b, vCardErrf("map does not contain field %q required by the schema", req)
 		}
 	}
 	buf := e.encodeRecordHeader([]byte{}, ctx)
@@ -155,7 +153,6 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 				if !found {
 					continue
 				}
-
 				buf = append(buf, fmt.Sprintf("%s%s%s", k, v, e.newlineSequence)...)
 			}
 		} else {
@@ -164,7 +161,6 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 				if !found {
 					continue
 				}
-
 				if strings.Contains(v, ":") {
 					buf = append(buf, fmt.Sprintf("%s%s%s", k, v, e.newlineSequence)...)
 				} else {
@@ -187,12 +183,12 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 
 				field, err := v.MarshalVCardField()
 				if err != nil {
-					return b, fmt.Errorf("vCard: error during marshaling value for a key %q: %w", k, err)
+					return b, vCardErrf("error during marshaling value for a key %q: %w", k, err)
 				}
 				buf = append(buf, fmt.Sprintf("%s%s%s", k, field, e.newlineSequence)...)
 			}
 		} else {
-			return b, fmt.Errorf("vCard: map value is a struct of type %s which does not implement VCardFieldMarshaler", i.Value().Type())
+			return b, vCardErrf("map value is a struct of type %s which does not implement VCardFieldMarshaler", i.Value().Type())
 		}
 	case reflect.Interface:
 		iter := ma.MapRange()
@@ -201,17 +197,16 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 			v, ok := iter.Value().Interface().(VCardFieldMarshaler)
 
 			if !ok {
-				return b, fmt.Errorf("vCard: map value for a key %q is a struct of type %s which does not implement VCardFieldMarshaler", k, iter.Value().Type())
+				return b, vCardErrf("map value for a key %q is a struct of type %s which does not implement VCardFieldMarshaler", k, iter.Value().Type())
 			}
-
 			field, err := v.MarshalVCardField()
 			if err != nil {
-				return b, fmt.Errorf("vCard: error during marshaling value for a key %q: %w", k, err)
+				return b, vCardErrf("error during marshaling value for a key %q: %w", k, err)
 			}
 			buf = append(buf, fmt.Sprintf("%s%s%s", k, field, e.newlineSequence)...)
 		}
 	default:
-		return b, fmt.Errorf("vCard: type %s is not supported as a map value. Use string or a struct that implements VCardFieldMarshaler", i.Value().Type())
+		return b, vCardErrf("type %s is not supported as a map value. Use string or a struct that implements VCardFieldMarshaler", i.Value().Type())
 	}
 	buf = e.encodeRecordFooter(buf, ctx)
 
@@ -237,7 +232,7 @@ func (e *Encoder) encodeStruct(b []byte, struc reflect.Value, ctx encoderCtx) ([
 		}
 
 		if fieldName == "" {
-			return b, fmt.Errorf("vCard: struct %v does not contain field %q or field tagged `vCard:\"%s\"` required by the schema", struc.Type(), req, req)
+			return b, vCardErrf("struct %v does not contain field %q or field tagged `vCard:\"%s\"` required by the schema", struc.Type(), req, req)
 		}
 	}
 	buf := e.encodeRecordHeader([]byte{}, ctx)
@@ -284,17 +279,17 @@ func (e *Encoder) encodeStruct(b []byte, struc reflect.Value, ctx encoderCtx) ([
 			v, ok := field.Interface().(VCardFieldMarshaler)
 
 			if !ok {
-				return b, fmt.Errorf("vCard: field %q %sof a struct %s has type %s which does not implement VCardFieldMarshaler", fieldDesc.Name, taggedMsg, struc.Type(), field.Type())
+				return b, vCardErrf("field %q %sof a struct %s has type %s which does not implement VCardFieldMarshaler", fieldDesc.Name, taggedMsg, struc.Type(), field.Type())
 			}
 
 			fieldBytes, err := v.MarshalVCardField()
 			if err != nil {
-				return b, fmt.Errorf("vCard: error during marshaling field %q %sof struct %s: %w", fieldDesc.Name, taggedMsg, struc.Type(), err)
+				return b, vCardErrf("error during marshaling field %q %sof struct %s: %w", fieldDesc.Name, taggedMsg, struc.Type(), err)
 			}
 			buf = append(buf, fmt.Sprintf("%s%s%s", vCardName, fieldBytes, e.newlineSequence)...)
 
 		default:
-			return b, fmt.Errorf("vCard: field %q %sof a struct %s has unsupported type %s. Use string or a struct that implements VCardFieldMarshaler", fieldDesc.Name, taggedMsg, struc.Type(), field.Type())
+			return b, vCardErrf("field %q %sof a struct %s has unsupported type %s. Use string or a struct that implements VCardFieldMarshaler", fieldDesc.Name, taggedMsg, struc.Type(), field.Type())
 		}
 	}
 
@@ -327,7 +322,7 @@ func (e *Encoder) encodeSlice(b []byte, slice reflect.Value, ctx encoderCtx) ([]
 			var err error
 			buf, err = e.encodeMap(buf, elem, ctx)
 			if err != nil {
-				return b, fmt.Errorf("vCard: error during marshaling slice member idx=%v: %w", i, err)
+				return b, vCardErrf("error during marshaling slice member idx=%v: %w", i, err)
 			}
 		}
 	case reflect.Struct:
@@ -336,7 +331,7 @@ func (e *Encoder) encodeSlice(b []byte, slice reflect.Value, ctx encoderCtx) ([]
 			var err error
 			buf, err = e.encodeStruct(buf, elem, ctx)
 			if err != nil {
-				return b, fmt.Errorf("vCard: error during marshaling slice member idx=%v: %w", i, err)
+				return b, vCardErrf("error during marshaling slice member idx=%v: %w", i, err)
 			}
 		}
 	case reflect.Interface:
@@ -345,11 +340,11 @@ func (e *Encoder) encodeSlice(b []byte, slice reflect.Value, ctx encoderCtx) ([]
 			var err error
 			buf, err = e.encode(buf, elem, ctx)
 			if err != nil {
-				return b, fmt.Errorf("vCard: error during marshaling slice member idx=%v: %w", i, err)
+				return b, vCardErrf("error during marshaling slice member idx=%v: %w", i, err)
 			}
 		}
 	default:
-		return b, fmt.Errorf("vCard: unable to encode slice of type %s. Use slice of structs or maps", elemKind)
+		return b, vCardErrf("unable to encode slice of type %s. Use slice of structs or maps", elemKind)
 	}
 	return append(b, buf...), nil
 }

@@ -46,7 +46,7 @@ func NewDecoder(r io.Reader, schemas []Schema) *Decoder {
 	for _, s := range schemas {
 		_, found := m[s.version]
 		if found {
-			panic(fmt.Sprintf("vCard: cannot create a Decoder of multiple schemas with same version %s", s.version))
+			panic(vCardErrf("cannot create a Decoder of multiple schemas with same version %s", s.version))
 		}
 		m[s.version] = s
 	}
@@ -77,15 +77,15 @@ func (d *Decoder) SetSmartStrings(smartStrings bool) *Decoder {
 func (d *Decoder) Decode(v any) error {
 	b, err := io.ReadAll(d.r)
 	if err != nil {
-		return fmt.Errorf("%w: unable to read: %w", ErrVCard, err)
+		return vCardErrf("unable to read: %w", err)
 	}
 	maybePtr := reflect.ValueOf(v)
 
 	if maybePtr.Kind() != reflect.Pointer {
-		return fmt.Errorf("%w: decoding is only possible into a pointer, not %s", ErrVCard, maybePtr.Kind())
+		return vCardErrf("decoding is only possible into a pointer, not %s", maybePtr.Kind())
 	}
 	if maybePtr.IsNil() {
-		return fmt.Errorf("%w: decoding is only possible into a not-nil pointer", ErrVCard)
+		return vCardErrf("decoding is only possible into a not-nil pointer")
 	}
 	value := maybePtr.Elem()
 
@@ -104,7 +104,7 @@ func (d *Decoder) decode(s string, v reflect.Value) (string, error) {
 	case reflect.Array:
 		return d.decodeArray(s, v)
 	default:
-		return s, fmt.Errorf("%w: unable to decode into %s type. Use struct, map or a slice", ErrVCard, v.Type())
+		return s, vCardErrf("unable to decode into %s type. Use struct, map or a slice", v.Type())
 	}
 }
 
@@ -129,7 +129,7 @@ func (d *Decoder) decodeStruct(data string, struc reflect.Value) (string, error)
 		}
 		offset += len(line)
 
-		parseErr := fmt.Errorf("%w: unable to decode line %q. Should have format %q", ErrParsing, line, "KEY:VALUE\r\n")
+		parseErr := parsingErrf("unable to decode line %q. Should have format %q", line, "KEY:VALUE\r\n")
 
 		idx := strings.IndexFunc(trimmed, func(r rune) bool {
 			return !unicode.IsLetter(r)
@@ -155,19 +155,19 @@ func (d *Decoder) decodeStruct(data string, struc reflect.Value) (string, error)
 
 	ver, found := m["VERSION"]
 	if !found {
-		return data, fmt.Errorf("%w: field %q was not found", ErrParsing, "VERSION")
+		return data, parsingErrf("field %q was not found", "VERSION")
 	}
 	ver = ver[1:]
 
 	schema, found := d.schemas[ver]
 	if !found {
-		return data, fmt.Errorf("%w: schema for version %q was not provided to Decoder", ErrParsing, ver)
+		return data, parsingErrf("schema for version %q was not provided to Decoder", ver)
 	}
 
 	for req := range schema.requiredFields {
 		_, found := m[req]
 		if !found {
-			return data, fmt.Errorf("%w: document does not contain a field %q required by the schema", ErrParsing, req)
+			return data, parsingErrf("document does not contain a field %q required by the schema", req)
 		}
 	}
 
@@ -177,7 +177,7 @@ func (d *Decoder) decodeStruct(data string, struc reflect.Value) (string, error)
 	}
 
 	if len(strings.TrimSpace(s)) != 0 {
-		return s, fmt.Errorf("%w after successfully decoding a struct", ErrLeftoverTokens)
+		return s, leftTokensErrf("after successfully decoding a struct")
 	}
 
 	return s, nil
@@ -201,10 +201,9 @@ func (d *Decoder) fillStruct(struc reflect.Value, m map[string]string, schema Sc
 			}
 		}
 		if !matches {
-			return fmt.Errorf("%w: struct %s does not contain a field %q or field tagged `vCard:\"%s\"` required by the schema", ErrVCard, struc.Type(), req, req)
+			return vCardErrf("struct %s does not contain a field %q or field tagged `vCard:\"%s\"` required by the schema", struc.Type(), req, req)
 		}
 	}
-
 	for i := range struc.NumField() {
 		field := struc.Type().Field(i)
 		fieldValue := struc.Field(i)
@@ -225,11 +224,9 @@ func (d *Decoder) fillStruct(struc reflect.Value, m map[string]string, schema Sc
 			continue
 		}
 		// Everything is alright, we need to decode this field into v
-
 		if !fieldValue.CanSet() {
-			return fmt.Errorf("%w: unable to set a field %q of struct %s for unexpected reason", ErrVCard, field.Name, fieldValue.Type())
+			return vCardErrf("unable to set a field %q of struct %s for unexpected reason", field.Name, fieldValue.Type())
 		}
-
 		taggedMsg := ""
 		if tag != "" {
 			taggedMsg = fmt.Sprintf("tagged `vCard:\"%s\"` ", tag)
@@ -248,19 +245,16 @@ func (d *Decoder) fillStruct(struc reflect.Value, m map[string]string, schema Sc
 			}
 		case reflect.Struct, reflect.Interface:
 			v, ok := fieldValue.Interface().(VCardFieldUnmarshaler)
-
 			if !ok {
-				return fmt.Errorf("%w: field %q %sof type %s has type %s which does not implement VCardFieldUnmarshaler", ErrVCard, field.Name, taggedMsg, struc.Type(), fieldValue.Type())
+				return vCardErrf("field %q %sof type %s has type %s which does not implement VCardFieldUnmarshaler", field.Name, taggedMsg, struc.Type(), fieldValue.Type())
 			}
-
 			err := v.UnmarshalVCardField([]byte(serField))
 			if err != nil {
-				return fmt.Errorf("%w: error during unmarshaling field %q %sof struct %s: %w", ErrVCard, field.Name, taggedMsg, struc.Type(), err)
+				return vCardErrf("error during unmarshaling field %q %sof struct %s: %w", field.Name, taggedMsg, struc.Type(), err)
 			}
 		default:
-			return fmt.Errorf("%w: field %q %sof type %shas unsupported type %s. Use string or struct that implements VCardFieldUnmarshaler", ErrVCard, field.Name, taggedMsg, struc.Type(), field.Type)
+			return vCardErrf("field %q %sof type %shas unsupported type %s. Use string or struct that implements VCardFieldUnmarshaler", field.Name, taggedMsg, struc.Type(), field.Type)
 		}
-
 	}
 
 	return nil
@@ -278,12 +272,12 @@ const expectedHeader = "BEGIN:VCARD"
 
 func (d *Decoder) decodeRecordHeader(s string) (string, error) {
 	if s == "" {
-		return s, fmt.Errorf("%w: %w", ErrParsing, io.ErrUnexpectedEOF)
+		return s, parsingErrf("%w", io.ErrUnexpectedEOF)
 	}
 	lineLen := 0
 	for line := range strings.Lines(s) {
 		if strings.TrimSpace(line) != expectedHeader {
-			return s, fmt.Errorf("%w: expected %q but found %q", ErrParsing, expectedHeader, line)
+			return s, parsingErrf("expected %q but found %q", expectedHeader, line)
 		}
 		lineLen = len(line)
 		break
@@ -295,12 +289,12 @@ const expectedFooter = "END:VCARD"
 
 func (d *Decoder) decodeRecordFooter(s string) (string, error) {
 	if s == "" {
-		return s, fmt.Errorf("%w: %w", ErrParsing, io.ErrUnexpectedEOF)
+		return s, parsingErrf("%w", io.ErrUnexpectedEOF)
 	}
 	lineLen := 0
 	for line := range strings.Lines(s) {
 		if strings.TrimSpace(line) != expectedFooter {
-			return s, fmt.Errorf("%w: expected %q but found %q", ErrParsing, expectedFooter, line)
+			return s, parsingErrf("expected %q but found %q", expectedFooter, line)
 		}
 		lineLen = len(line)
 		break

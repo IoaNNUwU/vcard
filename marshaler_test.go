@@ -22,8 +22,7 @@ func TestMapMissingRequiredKey(t *testing.T) {
 
 	b, err := MarshalSchema(m, SchemaFor[TelRequiredSchema]("4.0"))
 
-	assertErr(t, err)
-	assertStringContains(t, err.Error(), "does not contain field `TEL`")
+	assertErrIs(t, err, ErrVCard, "does not contain field \"TEL\"")
 	assertSlicesEq(t, b, []byte{})
 }
 
@@ -207,8 +206,7 @@ func TestMapWithUnsupportedKey(t *testing.T) {
 
 	b, err := Marshal(m)
 
-	assertErr(t, err)
-	assertStringContains(t, err.Error(), "type int is not supported as a map key")
+	assertErrIs(t, err, ErrVCard, "type int is not supported as a map key")
 	assertSlicesEq(t, b, []byte{})
 }
 
@@ -226,8 +224,7 @@ func TestValueStructDoesNotImplementMarshaler(t *testing.T) {
 
 	b, err := Marshal(m)
 
-	assertErr(t, err)
-	assertStringContains(t, err.Error(), "does not implement VCardFieldMarshaler")
+	assertErrIs(t, err, ErrVCard, "does not implement VCardFieldMarshaler")
 	assertSlicesEq(t, b, []byte{})
 }
 
@@ -241,8 +238,7 @@ func TestMapAnyValueDoesNotImplementMarshaler(t *testing.T) {
 
 	b, err := Marshal(m)
 
-	assertErr(t, err)
-	assertStringContains(t, err.Error(), "does not implement VCardFieldMarshaler")
+	assertErrIs(t, err, ErrVCard, "does not implement VCardFieldMarshaler")
 	assertSlicesEq(t, b, []byte{})
 }
 
@@ -256,8 +252,7 @@ func TestUnsupportedTypeAsMapValue(t *testing.T) {
 
 	b, err := Marshal(m)
 
-	assertErr(t, err)
-	assertStringContains(t, err.Error(), "type int is not supported as a map value")
+	assertErrIs(t, err, ErrVCard, "type int is not supported as a map value")
 	assertSlicesEq(t, b, []byte{})
 }
 
@@ -308,7 +303,6 @@ FN:Alex FullName 3
 NAME:Alex Name Hello 3
 END:VCARD
 `
-
 	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
@@ -328,8 +322,7 @@ func TestStructMissingRequiredField(t *testing.T) {
 
 	b, err := MarshalSchema(stru, SchemaFor[TelRequiredSchema]("4.0"))
 
-	assertErr(t, err)
-	assertStringContains(t, err.Error(), "does not contain field `TEL`")
+	assertErrIs(t, err, ErrVCard, "does not contain field \"TEL\"")
 	assertSlicesEq(t, b, []byte{})
 }
 
@@ -534,8 +527,7 @@ func TestStructAnyDoesNotImplementMarshaler(t *testing.T) {
 
 	b, err := Marshal(s)
 
-	assertErr(t, err)
-	assertStringContains(t, err.Error(), "does not implement VCardFieldMarshaler")
+	assertErrIs(t, err, ErrVCard, "does not implement VCardFieldMarshaler")
 	assertSlicesEq(t, b, []byte{})
 }
 
@@ -555,8 +547,7 @@ func TestStructDoesNotImplementMarshaler(t *testing.T) {
 
 	b, err := Marshal(s)
 
-	assertErr(t, err)
-	assertStringContains(t, err.Error(), "does not implement VCardFieldMarshaler")
+	assertErrIs(t, err, ErrVCard, "does not implement VCardFieldMarshaler")
 	assertSlicesEq(t, b, []byte{})
 }
 

@@ -118,7 +118,7 @@ func (d *Decoder) decodeMap(data string, ma reflect.Value) (string, error) {
 	if err != nil {
 		return data, err
 	}
-	m, schema, s, err := d.decodeVCardFieldsIntoMap(data)
+	m, schema, s, err := d.decodeVCardFieldsIntoMap(s)
 	if err != nil {
 		return data, err
 	}
@@ -212,7 +212,7 @@ func (d *Decoder) decodeStruct(data string, struc reflect.Value) (string, error)
 	if err != nil {
 		return data, err
 	}
-	m, schema, s, err := d.decodeVCardFieldsIntoMap(data)
+	m, schema, s, err := d.decodeVCardFieldsIntoMap(s)
 	if err != nil {
 		return data, err
 	}

@@ -26,6 +26,7 @@ func MarshalSchema(v any, schema Schema) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
+
 	return buf.Bytes(), nil
 }
 

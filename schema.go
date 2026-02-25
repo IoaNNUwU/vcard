@@ -89,7 +89,7 @@ type StringSchemaV4 struct {
 	ANNIVERSARY string // Defines the person's anniversary.
 	BDAY        string // Date of birth of the individual.
 
-	// BEGIN:VCARD - All vCards must start with this property.
+	// BEGIN:VCARD - All vCards must start with this property. No need to declare it.
 
 	CALADRURI    string // A URL to use for sending a scheduling request to the person's calendar.
 	CALURI       string // A URL to the person's calendar.
@@ -98,7 +98,7 @@ type StringSchemaV4 struct {
 	CLIENTPIDMAP string // Used for synchronizing different revisions of the same vCard.
 	EMAIL        string // The address for electronic mail communication
 
-	// END:VCARD - All vCards must end with this property.
+	// END:VCARD - All vCards must end with this property. No need to declare it.
 
 	FBURL  string // Defines a URL that shows when the person is "free" or "busy" on their calendar.
 	FN     string `vCard:"required"` // The formatted name string.
@@ -147,6 +147,10 @@ type StringSchemaV4 struct {
 	UID   string // Specifies a persistent, globally unique identifier associated with the person.
 	URL   string // A URL pointing to a website that represents the person in some way.
 
+	// VERSION field is special. It does not have `vCard:"required"` annotation but still
+	// considered required by [Decoder]. This was done for the case of user-defined struct 
+	// not having VERSION field or field tagges `vCard:"VERSION"`. In this case [Decoder] will
+	// not return an error. 
 	VERSION string // The version of the vCard specification.
 
 	XML string // Any XML data that is attached to the vCard.
@@ -164,7 +168,7 @@ type StringSchemaV3 struct {
 	ANNIVERSARY string // Defines the person's anniversary.
 	BDAY        string // Date of birth of the individual.
 
-	// BEGIN:VCARD - All vCards must start with this property.
+	// BEGIN:VCARD - All vCards must start with this property. No need to declare it.
 
 	CALADRURI    string // A URL to use for sending a scheduling request to the person's calendar.
 	CALURI       string // A URL to the person's calendar.
@@ -173,7 +177,7 @@ type StringSchemaV3 struct {
 	CLIENTPIDMAP string // Used for synchronizing different revisions of the same vCard.
 	EMAIL        string // The address for electronic mail communication
 
-	// END:VCARD - All vCards must end with this property.
+	// END:VCARD - All vCards must end with this property. No need to declare it.
 
 	FBURL  string // Defines a URL that shows when the person is "free" or "busy" on their calendar.
 	FN     string `vCard:"required"` // The formatted name string.
@@ -222,6 +226,10 @@ type StringSchemaV3 struct {
 	UID   string // Specifies a persistent, globally unique identifier associated with the person.
 	URL   string // A URL pointing to a website that represents the person in some way.
 
+	// VERSION field is special. It does not have `vCard:"required"` annotation but still
+	// considered required by [Decoder]. This was done for the case of user-defined struct 
+	// not having VERSION field or field tagges `vCard:"VERSION"`. In this case [Decoder] will
+	// not return an error. 
 	VERSION string // The version of the vCard specification.
 
 	XML string // Any XML data that is attached to the vCard.
@@ -239,7 +247,7 @@ type StringSchemaV2_1 struct {
 	ANNIVERSARY string // Defines the person's anniversary.
 	BDAY        string // Date of birth of the individual.
 
-	// BEGIN:VCARD - All vCards must start with this property.
+	// BEGIN:VCARD - All vCards must start with this property. No need to declare it.
 
 	CALADRURI    string // A URL to use for sending a scheduling request to the person's calendar.
 	CALURI       string // A URL to the person's calendar.
@@ -248,7 +256,7 @@ type StringSchemaV2_1 struct {
 	CLIENTPIDMAP string // Used for synchronizing different revisions of the same vCard.
 	EMAIL        string // The address for electronic mail communication
 
-	// END:VCARD - All vCards must end with this property.
+	// END:VCARD - All vCards must end with this property. No need to declare it.
 
 	FBURL  string // Defines a URL that shows when the person is "free" or "busy" on their calendar.
 	FN     string // The formatted name string.
@@ -297,6 +305,10 @@ type StringSchemaV2_1 struct {
 	UID   string // Specifies a persistent, globally unique identifier associated with the person.
 	URL   string // A URL pointing to a website that represents the person in some way.
 
+	// VERSION field is special. It does not have `vCard:"required"` annotation but still
+	// considered required by [Decoder]. This was done for the case of user-defined struct 
+	// not having VERSION field or field tagges `vCard:"VERSION"`. In this case [Decoder] will
+	// not return an error. 
 	VERSION string // The version of the vCard specification.
 
 	XML string // Any XML data that is attached to the vCard.

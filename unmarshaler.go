@@ -451,12 +451,30 @@ func (d *Decoder) decodeVCardFieldsIntoMap(s string) (map[string]string, Schema,
 	m := make(map[string]string)
 	offset := 0
 
+	lastKey := ""
 	for line := range strings.Lines(s) {
 		trimmed := strings.TrimSpace(line)
 		if trimmed == expectedFooter {
 			break
 		}
 		offset += len(line)
+
+		if trimmed == "" {
+			continue
+		}
+
+		isContinuation := false
+		if len(line) >= 1 && line[0] == ' ' {
+			isContinuation = true
+		}
+
+		if isContinuation {
+			lastValue := m[lastKey]
+			lastValue = lastValue + trimmed
+			m[lastKey] = lastValue
+
+			continue
+		}
 
 		parseErr := parsingErrf("unable to decode line %q. Should have format %q", line, "KEY:VALUE\r\n")
 
@@ -474,6 +492,8 @@ func (d *Decoder) decodeVCardFieldsIntoMap(s string) (map[string]string, Schema,
 			return m, Schema{}, s, parseErr
 		}
 		m[key] = value
+
+		lastKey = key
 	}
 
 	s = s[offset:]
@@ -544,7 +564,9 @@ func (d *Decoder) decodeSlice(data string, slice reflect.Value) (string, error) 
 
 		s := data
 		for {
-			m := reflect.MakeMap(elemDesc)
+			ptr := reflect.New(elemDesc)
+			m := ptr.Elem()
+			m.Set(reflect.MakeMap(elemDesc))
 
 			var err error
 			s, err = d.decodeMap(s, m)

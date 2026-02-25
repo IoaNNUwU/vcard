@@ -166,7 +166,7 @@ func (s *marshalVCardPtrImpl) MarshalVCardField() ([]byte, error) {
 }
 
 func TestMapWithPtrCustomMarshaler(t *testing.T) {
-	
+
 	m := map[string]marshalVCardPtrImpl{
 		"N":    {"Alex"},
 		"FN":   {"Alex FullName"},
@@ -476,7 +476,7 @@ type customMarshalerPtrUser struct {
 func TestStructCustomPtrFields(t *testing.T) {
 
 	s := customMarshalerPtrUser{
-		N: &marshalVCardImpl{"Alex"},
+		N:    &marshalVCardImpl{"Alex"},
 		FN:   &marshalVCardImpl{"Alex FullName"},
 		NAME: &marshalVCardImpl{"Alex Name Hello"},
 	}

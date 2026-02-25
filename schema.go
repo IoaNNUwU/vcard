@@ -148,9 +148,9 @@ type StringSchemaV4 struct {
 	URL   string // A URL pointing to a website that represents the person in some way.
 
 	// VERSION field is special. It does not have `vCard:"required"` annotation but still
-	// considered required by [Decoder]. This was done for the case of user-defined struct 
+	// considered required by [Decoder]. This was done for the case of user-defined struct
 	// not having VERSION field or field tagges `vCard:"VERSION"`. In this case [Decoder] will
-	// not return an error. 
+	// not return an error.
 	VERSION string // The version of the vCard specification.
 
 	XML string // Any XML data that is attached to the vCard.
@@ -227,9 +227,9 @@ type StringSchemaV3 struct {
 	URL   string // A URL pointing to a website that represents the person in some way.
 
 	// VERSION field is special. It does not have `vCard:"required"` annotation but still
-	// considered required by [Decoder]. This was done for the case of user-defined struct 
+	// considered required by [Decoder]. This was done for the case of user-defined struct
 	// not having VERSION field or field tagges `vCard:"VERSION"`. In this case [Decoder] will
-	// not return an error. 
+	// not return an error.
 	VERSION string // The version of the vCard specification.
 
 	XML string // Any XML data that is attached to the vCard.
@@ -306,9 +306,9 @@ type StringSchemaV2_1 struct {
 	URL   string // A URL pointing to a website that represents the person in some way.
 
 	// VERSION field is special. It does not have `vCard:"required"` annotation but still
-	// considered required by [Decoder]. This was done for the case of user-defined struct 
+	// considered required by [Decoder]. This was done for the case of user-defined struct
 	// not having VERSION field or field tagges `vCard:"VERSION"`. In this case [Decoder] will
-	// not return an error. 
+	// not return an error.
 	VERSION string // The version of the vCard specification.
 
 	XML string // Any XML data that is attached to the vCard.

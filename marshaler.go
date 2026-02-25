@@ -235,7 +235,6 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 				buf = append(buf, fmt.Sprintf("%s%s%s", k, field, e.newlineSequence)...)
 			}
 
-		
 		} else {
 			return b, vCardErrf("map value is a struct of type %s which does not implement VCardFieldMarshaler", i.Value().Type())
 		}

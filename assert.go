@@ -44,17 +44,17 @@ func assertStringLinesEq(t *testing.T, found string, expected string) {
 }
 
 func assertMapsEq[K comparable, V comparable](t *testing.T, found map[K]V, expected map[K]V) {
-	if !maps.Equal(found, expected) {
+	if !reflect.DeepEqual(found, expected) {
 		t.Errorf("Maps are different.\nExpected:\n\n%v\n\nFound:\n\n%v", expected, found)
 	}
 }
 
 func assertErrIs(t *testing.T, found error, expected error, substr string) {
 	if !errors.Is(found, expected) {
-		t.Errorf("Error has wrong type %q but %q was expected", reflect.TypeOf(found), reflect.TypeOf(expected))
+		t.Errorf("Error has wrong type: Found %q but %q was expected", found, expected)
 	}
 	if !strings.Contains(found.Error(), substr) {
-		t.Errorf("Error has right type %q but description does not contain %q", reflect.TypeOf(found), substr)
+		t.Errorf("Error has right type but description does not contain %q: %q", substr, found.Error())
 	}
 }
 

@@ -30,6 +30,24 @@ func MarshalSchema(v any, schema Schema) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// Implemented by fields that need custom Marshaling logic.
+//
+// Note that this interface defines a way to marshal a value of single field.
+// e.g. TEL field has custom type Tel:
+//
+//		type Tel struct {
+//			typ string
+//			tel string
+//		}
+//
+//		func (t *Tel) MarshalVCardField() ([]byte, error) {
+//			// final result is TEL;TYPE=CELL:(123) 555-5832
+//			return fmt.Sprintf(";TYPE=%s:%s", t.typ, t.tel), nil
+//		}
+type VCardFieldMarshaler interface {
+	MarshalVCardField() ([]byte, error)
+}
+
 // Writes a vCard document to an output stream.
 type Encoder struct {
 	w io.Writer
@@ -117,6 +135,8 @@ func (e *Encoder) encode(b []byte, v reflect.Value, ctx encoderCtx) ([]byte, err
 		return e.encodeStruct(b, v, ctx)
 	case reflect.Array, reflect.Slice:
 		return e.encodeSlice(b, v, ctx)
+	case reflect.Pointer:
+		return e.encode(b, v.Elem(), ctx)
 	}
 	return b, vCardErrf("unable to encode %s type. Use struct, map or a slice", v.Type())
 }
@@ -188,6 +208,28 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 				}
 				buf = append(buf, fmt.Sprintf("%s%s%s", k, field, e.newlineSequence)...)
 			}
+		} else if reflect.PointerTo(i.Value().Type()).Implements(reflect.TypeFor[VCardFieldMarshaler]()) {
+			iter := ma.MapRange()
+			for iter.Next() {
+				k := iter.Key().String()
+
+				_, found := ctx.schema.fields[k]
+				if !found {
+					continue
+				}
+
+				ptr := reflect.New(iter.Value().Type())
+				ptr.Elem().Set(iter.Value())
+
+				v := ptr.Interface().(VCardFieldMarshaler)
+
+				field, err := v.MarshalVCardField()
+				if err != nil {
+					return b, vCardErrf("error during marshaling value for a key %q: %w", k, err)
+				}
+				buf = append(buf, fmt.Sprintf("%s%s%s", k, field, e.newlineSequence)...)
+			}
+
 		} else {
 			return b, vCardErrf("map value is a struct of type %s which does not implement VCardFieldMarshaler", i.Value().Type())
 		}
@@ -276,7 +318,7 @@ func (e *Encoder) encodeStruct(b []byte, struc reflect.Value, ctx encoderCtx) ([
 					buf = append(buf, fmt.Sprintf("%s:%s%s", vCardName, s, e.newlineSequence)...)
 				}
 			}
-		case reflect.Struct, reflect.Interface:
+		case reflect.Struct, reflect.Interface, reflect.Pointer:
 			v, ok := field.Interface().(VCardFieldMarshaler)
 
 			if !ok {
@@ -352,27 +394,4 @@ func (e *Encoder) encodeSlice(b []byte, slice reflect.Value, ctx encoderCtx) ([]
 
 type encoderCtx struct {
 	schema Schema
-}
-
-// Implemented by fields that need custom Marshaling logic.
-//
-// Note that this interface defines a way to marshal a value of single field.
-// e.g. TEL field has custom type Tel:
-//
-//	    type MySchemaV4 struct {
-//			FN  string `vCard:"required"`
-//			TEL Tel    `vCard:"required"`
-//		}
-//
-//		type Tel struct {
-//			typ string
-//			tel string
-//		}
-//
-//		func (t Tel) MarshalVCardField() ([]byte, error) {
-//			// final result is TEL;TYPE=CELL:(123) 555-5832
-//			return fmt.Sprintf(";TYPE=%s:%s", typ, tel), nil
-//		}
-type VCardFieldMarshaler interface {
-	MarshalVCardField() ([]byte, error)
 }

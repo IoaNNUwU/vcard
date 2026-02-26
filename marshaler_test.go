@@ -7,7 +7,7 @@ import (
 
 // Map Marshaling Tests
 
-type TelRequiredSchema struct {
+type telRequiredSchema struct {
 	N   string `vCard:"required"`
 	TEL string `vCard:"required"`
 }
@@ -20,15 +20,15 @@ func TestMapMissingRequiredKey(t *testing.T) {
 		// missing field TEL
 	}
 
-	b, err := MarshalSchema(m, SchemaFor[TelRequiredSchema]("4.0"))
+	b, err := MarshalSchema(m, SchemaFor[telRequiredSchema]("4.0"))
 
 	assertErrIs(t, err, ErrVCard, "does not contain field \"TEL\"")
 	assertSlicesEq(t, b, []byte{})
 }
 
-type Empty struct{}
+type empty struct{}
 
-var EmptySchema = SchemaFor[Empty]("4.0")
+var EmptySchema = SchemaFor[empty]("4.0")
 
 func TestEmptyMap(t *testing.T) {
 
@@ -129,17 +129,45 @@ END:VCARD
 	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
-type MarshalVCardImpl struct {
+type marshalVCardImpl struct {
 	s string
 }
 
-func (s MarshalVCardImpl) MarshalVCardField() ([]byte, error) {
+func (s marshalVCardImpl) MarshalVCardField() ([]byte, error) {
 	return fmt.Appendf(nil, ";;%s;;", s.s), nil
 }
 
 func TestMapWithValueCustomMarshaler(t *testing.T) {
 
-	m := map[string]MarshalVCardImpl{
+	m := map[string]marshalVCardImpl{
+		"N":    {"Alex"},
+		"FN":   {"Alex FullName"},
+		"NAME": {"Alex Name Hello"},
+	}
+
+	b, _ := Marshal(m)
+
+	exp := `BEGIN:VCARD
+VERSION:4.0
+N;;Alex;;
+FN;;Alex FullName;;
+NAME;;Alex Name Hello;;
+END:VCARD
+`
+	assertStringLinesEq(t, string(b), crlfy(exp))
+}
+
+type marshalVCardPtrImpl struct {
+	s string
+}
+
+func (s *marshalVCardPtrImpl) MarshalVCardField() ([]byte, error) {
+	return fmt.Appendf(nil, ";;%s;;", s.s), nil
+}
+
+func TestMapWithPtrCustomMarshaler(t *testing.T) {
+
+	m := map[string]marshalVCardPtrImpl{
 		"N":    {"Alex"},
 		"FN":   {"Alex FullName"},
 		"NAME": {"Alex Name Hello"},
@@ -160,9 +188,9 @@ END:VCARD
 func TestInterfaceWithCustomMarshaler(t *testing.T) {
 
 	m := map[string]VCardFieldMarshaler{
-		"N":    MarshalVCardImpl{"Alex"},
-		"FN":   MarshalVCardImpl{"Alex FullName"},
-		"NAME": MarshalVCardImpl{"Alex Name Hello"},
+		"N":    marshalVCardImpl{"Alex"},
+		"FN":   marshalVCardImpl{"Alex FullName"},
+		"NAME": marshalVCardImpl{"Alex Name Hello"},
 	}
 
 	b, _ := Marshal(m)
@@ -180,9 +208,9 @@ END:VCARD
 func TestAnyWithCustomMarshaler(t *testing.T) {
 
 	m := map[string]any{
-		"N":    MarshalVCardImpl{"Alex"},
-		"FN":   MarshalVCardImpl{"Alex FullName"},
-		"NAME": MarshalVCardImpl{"Alex Name Hello"},
+		"N":    marshalVCardImpl{"Alex"},
+		"FN":   marshalVCardImpl{"Alex FullName"},
+		"NAME": marshalVCardImpl{"Alex Name Hello"},
 	}
 
 	b, _ := Marshal(m)
@@ -210,13 +238,13 @@ func TestMapWithUnsupportedKey(t *testing.T) {
 	assertSlicesEq(t, b, []byte{})
 }
 
-type NotMarshaler struct {
+type notSerializable struct {
 	s string
 }
 
 func TestValueStructDoesNotImplementMarshaler(t *testing.T) {
 
-	m := map[string]NotMarshaler{
+	m := map[string]notSerializable{
 		"N":    {"Alex"},
 		"FN":   {"Alex FullName"},
 		"NAME": {"Alex Name Hello"},
@@ -231,9 +259,9 @@ func TestValueStructDoesNotImplementMarshaler(t *testing.T) {
 func TestMapAnyValueDoesNotImplementMarshaler(t *testing.T) {
 
 	m := map[string]any{
-		"N":    NotMarshaler{"Alex"},
-		"FN":   NotMarshaler{"Alex FullName"},
-		"NAME": NotMarshaler{"Alex Name Hello"},
+		"N":    notSerializable{"Alex"},
+		"FN":   notSerializable{"Alex FullName"},
+		"NAME": notSerializable{"Alex Name Hello"},
 	}
 
 	b, err := Marshal(m)
@@ -308,19 +336,19 @@ END:VCARD
 
 // Struct Marshaling Tests
 
-type MissingFieldImpl struct {
+type missingFieldImpl struct {
 	N  string
 	FN string
 	// missing field TEL
 }
 
 func TestStructMissingRequiredField(t *testing.T) {
-	stru := MissingFieldImpl{
+	stru := missingFieldImpl{
 		N:  ":Alex",
 		FN: ":Alex FullName",
 	}
 
-	b, err := MarshalSchema(stru, SchemaFor[TelRequiredSchema]("4.0"))
+	b, err := MarshalSchema(stru, SchemaFor[telRequiredSchema]("4.0"))
 
 	assertErrIs(t, err, ErrVCard, "does not contain field \"TEL\"")
 	assertSlicesEq(t, b, []byte{})
@@ -328,7 +356,7 @@ func TestStructMissingRequiredField(t *testing.T) {
 
 func TestEmptyStruct(t *testing.T) {
 
-	s := Empty{}
+	s := empty{}
 
 	b, _ := MarshalSchema(s, EmptySchema)
 
@@ -339,7 +367,7 @@ END:VCARD
 	assertStringsEq(t, string(b), crlfy(exp))
 }
 
-type StringUser struct {
+type stringUser struct {
 	N    string
 	FN   string
 	NAME string
@@ -347,7 +375,7 @@ type StringUser struct {
 
 func TestStructStringFields(t *testing.T) {
 
-	s := StringUser{
+	s := stringUser{
 		N:    ":Alex",
 		FN:   ":Alex FullName",
 		NAME: ":Alex Name Hello",
@@ -365,7 +393,7 @@ END:VCARD
 	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
-type MoreStringUser struct {
+type moreStringUser struct {
 	N     string
 	FN    string
 	NAME  string
@@ -374,7 +402,7 @@ type MoreStringUser struct {
 
 func TestStructMoreFields(t *testing.T) {
 
-	s := MoreStringUser{
+	s := moreStringUser{
 		N:     ":Alex",
 		FN:    ":Alex FullName",
 		NAME:  ":Alex Name Hello",
@@ -395,7 +423,7 @@ END:VCARD
 
 func TestStructStringFieldsSmart(t *testing.T) {
 
-	s := StringUser{
+	s := stringUser{
 		N:    "Alex",
 		FN:   "Alex FullName",
 		NAME: "Alex Name Hello",
@@ -413,18 +441,18 @@ END:VCARD
 	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
-type CustomMarshalerUser struct {
-	N    MarshalVCardImpl
-	FN   MarshalVCardImpl
-	NAME MarshalVCardImpl
+type customMarshalerUser struct {
+	N    marshalVCardImpl
+	FN   marshalVCardImpl
+	NAME marshalVCardImpl
 }
 
 func TestStructCustomFields(t *testing.T) {
 
-	s := CustomMarshalerUser{
-		N:    MarshalVCardImpl{"Alex"},
-		FN:   MarshalVCardImpl{"Alex FullName"},
-		NAME: MarshalVCardImpl{"Alex Name Hello"},
+	s := customMarshalerUser{
+		N:    marshalVCardImpl{"Alex"},
+		FN:   marshalVCardImpl{"Alex FullName"},
+		NAME: marshalVCardImpl{"Alex Name Hello"},
 	}
 
 	b, _ := Marshal(s)
@@ -439,7 +467,33 @@ END:VCARD
 	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
-type CustomMarshalerInterfaceUser struct {
+type customMarshalerPtrUser struct {
+	N    *marshalVCardImpl
+	FN   *marshalVCardImpl
+	NAME *marshalVCardImpl
+}
+
+func TestStructCustomPtrFields(t *testing.T) {
+
+	s := customMarshalerPtrUser{
+		N:    &marshalVCardImpl{"Alex"},
+		FN:   &marshalVCardImpl{"Alex FullName"},
+		NAME: &marshalVCardImpl{"Alex Name Hello"},
+	}
+
+	b, _ := Marshal(s)
+
+	exp := `BEGIN:VCARD
+VERSION:4.0
+N;;Alex;;
+FN;;Alex FullName;;
+NAME;;Alex Name Hello;;
+END:VCARD
+`
+	assertStringLinesEq(t, string(b), crlfy(exp))
+}
+
+type customMarshalerInterfaceUser struct {
 	N    VCardFieldMarshaler
 	FN   VCardFieldMarshaler
 	NAME VCardFieldMarshaler
@@ -447,10 +501,10 @@ type CustomMarshalerInterfaceUser struct {
 
 func TestStructInterfaceMarshalerFields(t *testing.T) {
 
-	s := CustomMarshalerInterfaceUser{
-		N:    MarshalVCardImpl{"Alex"},
-		FN:   MarshalVCardImpl{"Alex FullName"},
-		NAME: MarshalVCardImpl{"Alex Name Hello"},
+	s := customMarshalerInterfaceUser{
+		N:    marshalVCardImpl{"Alex"},
+		FN:   marshalVCardImpl{"Alex FullName"},
+		NAME: marshalVCardImpl{"Alex Name Hello"},
 	}
 
 	b, _ := Marshal(s)
@@ -465,7 +519,7 @@ END:VCARD
 	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
-type AnyUser struct {
+type anyUser struct {
 	N    any
 	FN   any
 	NAME any
@@ -473,10 +527,10 @@ type AnyUser struct {
 
 func TestStructAnyMarshalerFields(t *testing.T) {
 
-	s := AnyUser{
-		N:    MarshalVCardImpl{"Alex"},
-		FN:   MarshalVCardImpl{"Alex FullName"},
-		NAME: MarshalVCardImpl{"Alex Name Hello"},
+	s := anyUser{
+		N:    marshalVCardImpl{"Alex"},
+		FN:   marshalVCardImpl{"Alex FullName"},
+		NAME: marshalVCardImpl{"Alex Name Hello"},
 	}
 
 	b, _ := Marshal(s)
@@ -491,18 +545,18 @@ END:VCARD
 	assertStringLinesEq(t, string(b), crlfy(exp))
 }
 
-type TagsUser struct {
-	name        string `vCard:"N"`
-	fullName    string `vCard:"FN"`
-	description string `vCard:"NAME"`
+type tagsUser struct {
+	Name        string `vCard:"N"`
+	FullName    string `vCard:"FN"`
+	Description string `vCard:"NAME"`
 }
 
 func TestStructHasRenameTags(t *testing.T) {
 
-	s := TagsUser{
-		name:        ":Alex",
-		fullName:    ":Alex FullName",
-		description: ":Alex Name Hello",
+	s := tagsUser{
+		Name:        ":Alex",
+		FullName:    ":Alex FullName",
+		Description: ":Alex Name Hello",
 	}
 
 	b, _ := Marshal(s)
@@ -519,10 +573,10 @@ END:VCARD
 
 func TestStructAnyDoesNotImplementMarshaler(t *testing.T) {
 
-	s := AnyUser{
-		N:    NotMarshaler{"Alex"},
-		FN:   NotMarshaler{"Alex FullName"},
-		NAME: NotMarshaler{"Alex Name Hello"},
+	s := anyUser{
+		N:    notSerializable{"Alex"},
+		FN:   notSerializable{"Alex FullName"},
+		NAME: notSerializable{"Alex Name Hello"},
 	}
 
 	b, err := Marshal(s)
@@ -531,18 +585,18 @@ func TestStructAnyDoesNotImplementMarshaler(t *testing.T) {
 	assertSlicesEq(t, b, []byte{})
 }
 
-type UnsupportedUser struct {
-	N    NotMarshaler
-	FN   NotMarshaler
-	NAME NotMarshaler
+type unsupportedUser struct {
+	N    notSerializable
+	FN   notSerializable
+	NAME notSerializable
 }
 
 func TestStructDoesNotImplementMarshaler(t *testing.T) {
 
-	s := UnsupportedUser{
-		N:    NotMarshaler{":Alex"},
-		FN:   NotMarshaler{":Alex FullName"},
-		NAME: NotMarshaler{":Alex Name Hello"},
+	s := unsupportedUser{
+		N:    notSerializable{":Alex"},
+		FN:   notSerializable{":Alex FullName"},
+		NAME: notSerializable{":Alex Name Hello"},
 	}
 
 	b, err := Marshal(s)
@@ -553,21 +607,21 @@ func TestStructDoesNotImplementMarshaler(t *testing.T) {
 
 func TestMarshalSliceOfStructs(t *testing.T) {
 
-	sl := []CustomMarshalerUser{
+	sl := []customMarshalerUser{
 		{
-			N:    MarshalVCardImpl{"Alex 1"},
-			FN:   MarshalVCardImpl{"Alex FullName 1"},
-			NAME: MarshalVCardImpl{"Alex Name Hello 1"},
+			N:    marshalVCardImpl{"Alex 1"},
+			FN:   marshalVCardImpl{"Alex FullName 1"},
+			NAME: marshalVCardImpl{"Alex Name Hello 1"},
 		},
 		{
-			N:    MarshalVCardImpl{"Alex 2"},
-			FN:   MarshalVCardImpl{"Alex FullName 2"},
-			NAME: MarshalVCardImpl{"Alex Name Hello 2"},
+			N:    marshalVCardImpl{"Alex 2"},
+			FN:   marshalVCardImpl{"Alex FullName 2"},
+			NAME: marshalVCardImpl{"Alex Name Hello 2"},
 		},
 		{
-			N:    MarshalVCardImpl{"Alex 3"},
-			FN:   MarshalVCardImpl{"Alex FullName 3"},
-			NAME: MarshalVCardImpl{"Alex Name Hello 3"},
+			N:    marshalVCardImpl{"Alex 3"},
+			FN:   marshalVCardImpl{"Alex FullName 3"},
+			NAME: marshalVCardImpl{"Alex Name Hello 3"},
 		},
 	}
 

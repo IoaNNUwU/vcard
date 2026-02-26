@@ -1,8 +1,8 @@
 package main
 
 func main() {
-	// decodeSingleVCardFromFileAndPrint()
-	// decodeMultipleVCardsFromFileAndPrint()
+	decodeSingleVCardFromFileAndPrint()
+	decodeMultipleVCardsFromFileAndPrint()
 
 	decodeFromFileThenEncodeBack()
 }

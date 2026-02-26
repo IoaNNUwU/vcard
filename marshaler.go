@@ -35,19 +35,14 @@ func MarshalSchema(v any, schema Schema) ([]byte, error) {
 // Note that this interface defines a way to marshal a value of single field.
 // e.g. TEL field has custom type Tel:
 //
-//	    type MySchemaV4 struct {
-//			FN  string `vCard:"required"`
-//			TEL Tel    `vCard:"required"`
-//		}
-//
 //		type Tel struct {
 //			typ string
 //			tel string
 //		}
 //
-//		func (t Tel) MarshalVCardField() ([]byte, error) {
+//		func (t *Tel) MarshalVCardField() ([]byte, error) {
 //			// final result is TEL;TYPE=CELL:(123) 555-5832
-//			return fmt.Sprintf(";TYPE=%s:%s", typ, tel), nil
+//			return fmt.Sprintf(";TYPE=%s:%s", t.typ, t.tel), nil
 //		}
 type VCardFieldMarshaler interface {
 	MarshalVCardField() ([]byte, error)

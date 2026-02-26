@@ -31,17 +31,12 @@ func UnmarshalSchema(data []byte, v any, schemas []Schema) error {
 // Note that this interface defines a way to unmarshal single field.
 // e.g. TEL field has custom type Tel:
 //
-//	    type MySchemaV4 struct {
-//			FN  string `vCard:"required"`
-//			TEL Tel    `vCard:"required"`
-//		}
-//
 //		type Tel struct {
 //			typ string
 //			tel string
 //		}
 //
-//		func (t Tel) UnmarshalVCardField(data []byte) error {
+//		func (t *Tel) UnmarshalVCardField(data []byte) error {
 //			// data has a form of ";TYPE=CELL:(123) 555-5832"
 //			s := string(data)
 //

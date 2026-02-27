@@ -18,7 +18,7 @@ func decodeSingleVCardFromFileAndPrint() {
 	if err != nil {
 		panic(err)
 	}
-	defer f.Close()
+	defer f.Close() // nolint
 
 	data, err := io.ReadAll(f)
 	if err != nil {
@@ -28,7 +28,7 @@ func decodeSingleVCardFromFileAndPrint() {
 
 	// Unmarshal this byte slice into a map according to default schema
 	m := make(map[string]string)
-	vcard.Unmarshal(data, &m)
+	_ = vcard.Unmarshal(data, &m)
 
 	// Print results quoted
 	fmt.Printf("map:\n")
@@ -47,7 +47,7 @@ func decodeMultipleVCardsFromFileAndPrint() {
 	if err != nil {
 		panic(err)
 	}
-	defer f.Close()
+	defer f.Close() // nolint
 
 	data, err := io.ReadAll(f)
 	if err != nil {
@@ -56,7 +56,7 @@ func decodeMultipleVCardsFromFileAndPrint() {
 
 	// Unmarshal this byte slice into a slice of maps according to default schema
 	slice := make([]map[string]string, 0)
-	err = vcard.Unmarshal(data, &slice)
+	_ = vcard.Unmarshal(data, &slice)
 
 	// Print results quoted
 	fmt.Printf("map:\n")

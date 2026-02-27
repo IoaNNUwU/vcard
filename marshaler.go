@@ -35,15 +35,15 @@ func MarshalSchema(v any, schema Schema) ([]byte, error) {
 // Note that this interface defines a way to marshal a value of single field.
 // e.g. TEL field has custom type Tel:
 //
-//		type Tel struct {
-//			typ string
-//			tel string
-//		}
+//	type Tel struct {
+//		typ string
+//		tel string
+//	}
 //
-//		func (t *Tel) MarshalVCardField() ([]byte, error) {
-//			// final result is TEL;TYPE=CELL:(123) 555-5832
-//			return fmt.Sprintf(";TYPE=%s:%s", t.typ, t.tel), nil
-//		}
+//	func (t *Tel) MarshalVCardField() ([]byte, error) {
+//		// final result is TEL;TYPE=CELL:(123) 555-5832
+//		return fmt.Sprintf(";TYPE=%s:%s", t.typ, t.tel), nil
+//	}
 type VCardFieldMarshaler interface {
 	MarshalVCardField() ([]byte, error)
 }
@@ -55,7 +55,6 @@ type Encoder struct {
 	smartStrings    bool
 	newlineSequence string
 
-	// TODO: Cache prepared schema between EncodeSchema() calls
 	// TODO: Cache type info between encode() calls
 }
 
@@ -113,7 +112,6 @@ func (e *Encoder) EncodeSchema(v any, schema Schema) error {
 	// Intermidiate buffer makes sure there was no errors before writing to io.Writer
 	b := []byte{}
 
-	// TODO: Cache prepared schema between EncodeSchema() calls
 	ctx := encoderCtx{schema: schema}
 
 	b, err := e.encode(b, reflect.ValueOf(v), ctx)
@@ -170,6 +168,9 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 
 		if !e.smartStrings {
 			for k, v := range m {
+				if k == "VERSION" || strings.TrimSpace(v) == "" {
+					continue
+				}
 				_, found := ctx.schema.fields[k]
 				if !found {
 					continue
@@ -178,11 +179,14 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 			}
 		} else {
 			for k, v := range m {
+				if k == "VERSION" || strings.TrimSpace(v) == "" {
+					continue
+				}
 				_, found := ctx.schema.fields[k]
 				if !found {
 					continue
 				}
-				if strings.Contains(v, ":") {
+				if strings.Contains(v, ":") && (strings.HasPrefix(v, ";") || strings.HasPrefix(v, ":")) {
 					buf = append(buf, fmt.Sprintf("%s%s%s", k, v, e.newlineSequence)...)
 				} else {
 					buf = append(buf, fmt.Sprintf("%s:%s%s", k, v, e.newlineSequence)...)
@@ -194,7 +198,9 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 			iter := ma.MapRange()
 			for iter.Next() {
 				k := iter.Key().String()
-
+				if k == "VERSION" {
+					continue
+				}
 				_, found := ctx.schema.fields[k]
 				if !found {
 					continue
@@ -206,12 +212,18 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 				if err != nil {
 					return b, vCardErrf("error during marshaling value for a key %q: %w", k, err)
 				}
+				if strings.TrimSpace(string(field)) == "" {
+					continue
+				}
 				buf = append(buf, fmt.Sprintf("%s%s%s", k, field, e.newlineSequence)...)
 			}
 		} else if reflect.PointerTo(i.Value().Type()).Implements(reflect.TypeFor[VCardFieldMarshaler]()) {
 			iter := ma.MapRange()
 			for iter.Next() {
 				k := iter.Key().String()
+				if k == "VERSION" {
+					continue
+				}
 
 				_, found := ctx.schema.fields[k]
 				if !found {
@@ -227,6 +239,9 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 				if err != nil {
 					return b, vCardErrf("error during marshaling value for a key %q: %w", k, err)
 				}
+				if strings.TrimSpace(string(field)) == "" {
+					continue
+				}
 				buf = append(buf, fmt.Sprintf("%s%s%s", k, field, e.newlineSequence)...)
 			}
 
@@ -237,6 +252,10 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 		iter := ma.MapRange()
 		for iter.Next() {
 			k := iter.Key().String()
+			if k == "VERSION" {
+				continue
+			}
+
 			v, ok := iter.Value().Interface().(VCardFieldMarshaler)
 
 			if !ok {
@@ -245,6 +264,9 @@ func (e *Encoder) encodeMap(b []byte, ma reflect.Value, ctx encoderCtx) ([]byte,
 			field, err := v.MarshalVCardField()
 			if err != nil {
 				return b, vCardErrf("error during marshaling value for a key %q: %w", k, err)
+			}
+			if strings.TrimSpace(string(field)) == "" {
+				continue
 			}
 			buf = append(buf, fmt.Sprintf("%s%s%s", k, field, e.newlineSequence)...)
 		}
@@ -309,16 +331,19 @@ func (e *Encoder) encodeStruct(b []byte, struc reflect.Value, ctx encoderCtx) ([
 		switch field.Kind() {
 		case reflect.String:
 			s := field.String()
+			if strings.TrimSpace(s) == "" {
+				continue
+			}
 			if !e.smartStrings {
 				buf = append(buf, fmt.Sprintf("%s%s%s", vCardName, s, e.newlineSequence)...)
 			} else {
-				if strings.Contains(s, ":") {
+				if strings.Contains(s, ":") && (strings.HasPrefix(s, ";") || strings.HasPrefix(s, ":")) {
 					buf = append(buf, fmt.Sprintf("%s%s%s", vCardName, s, e.newlineSequence)...)
 				} else {
 					buf = append(buf, fmt.Sprintf("%s:%s%s", vCardName, s, e.newlineSequence)...)
 				}
 			}
-		case reflect.Struct, reflect.Interface, reflect.Pointer:
+		case reflect.Interface, reflect.Pointer:
 			v, ok := field.Interface().(VCardFieldMarshaler)
 
 			if !ok {
@@ -329,7 +354,43 @@ func (e *Encoder) encodeStruct(b []byte, struc reflect.Value, ctx encoderCtx) ([
 			if err != nil {
 				return b, vCardErrf("error during marshaling field %q %sof struct %s: %w", fieldDesc.Name, taggedMsg, struc.Type(), err)
 			}
+			if strings.TrimSpace(string(fieldBytes)) == "" {
+				continue
+			}
 			buf = append(buf, fmt.Sprintf("%s%s%s", vCardName, fieldBytes, e.newlineSequence)...)
+
+		case reflect.Struct:
+			if field.Type().Implements(reflect.TypeFor[VCardFieldMarshaler]()) {
+				v := field.Interface().(VCardFieldMarshaler)
+
+				fieldBytes, err := v.MarshalVCardField()
+				if err != nil {
+					return b, vCardErrf("error during marshaling field %q %sof struct %s: %w", fieldDesc.Name, taggedMsg, struc.Type(), err)
+				}
+				if strings.TrimSpace(string(fieldBytes)) == "" {
+					continue
+				}
+				buf = append(buf, fmt.Sprintf("%s%s%s", vCardName, fieldBytes, e.newlineSequence)...)
+
+			} else if reflect.PointerTo(field.Type()).Implements(reflect.TypeFor[VCardFieldMarshaler]()) {
+
+				ptr := reflect.New(field.Type())
+				ptr.Elem().Set(field)
+
+				v := ptr.Interface().(VCardFieldMarshaler)
+
+				fieldBytes, err := v.MarshalVCardField()
+				if err != nil {
+					return b, vCardErrf("error during marshaling field %q %sof struct %s: %w", fieldDesc.Name, taggedMsg, struc.Type(), err)
+				}
+				if strings.TrimSpace(string(fieldBytes)) == "" {
+					continue
+				}
+				buf = append(buf, fmt.Sprintf("%s%s%s", vCardName, fieldBytes, e.newlineSequence)...)
+
+			} else {
+				return b, vCardErrf("field %q %sof a struct %s has type %s which does not implement VCardFieldMarshaler", fieldDesc.Name, taggedMsg, struc.Type(), field.Type())
+			}
 
 		default:
 			return b, vCardErrf("field %q %sof a struct %s has unsupported type %s. Use string or a struct that implements VCardFieldMarshaler", fieldDesc.Name, taggedMsg, struc.Type(), field.Type())

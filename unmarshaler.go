@@ -31,29 +31,29 @@ func UnmarshalSchema(data []byte, v any, schemas []Schema) error {
 // Note that this interface defines a way to unmarshal single field.
 // e.g. TEL field has custom type Tel:
 //
-//		type Tel struct {
-//			typ string
-//			tel string
+//	type Tel struct {
+//		typ string
+//		tel string
+//	}
+//
+//	func (t *Tel) UnmarshalVCardField(data []byte) error {
+//		// data has a form of ";TYPE=CELL:(123) 555-5832"
+//		s := string(data)
+//
+//		sl := strings.Split(s, ":")
+//		if len(sl) != 2 {
+//			return errors.New("Unable to unmarshal")
 //		}
 //
-//		func (t *Tel) UnmarshalVCardField(data []byte) error {
-//			// data has a form of ";TYPE=CELL:(123) 555-5832"
-//			s := string(data)
-//
-//			sl := strings.Split(s, ":")
-//			if len(sl) != 2 {
-//				return errors.New("Unable to unmarshal")
-//			}
-//
-//			if strings.Contains(sl[0], "VOICE") {
-//				t.typ = "VOICE"
-//			} else {
-//				t.typ = "CELL"
-//			}
-//			t.tel = sl[1]
-//
-//			return nil
+//		if strings.Contains(sl[0], "VOICE") {
+//			t.typ = "VOICE"
+//		} else {
+//			t.typ = "CELL"
 //		}
+//		t.tel = sl[1]
+//
+//		return nil
+//	}
 type VCardFieldUnmarshaler interface {
 	UnmarshalVCardField(data []byte) error
 }
@@ -69,6 +69,8 @@ type Decoder struct {
 
 	// TODO: Decoder setting to be precise about line formatting
 	// e.g. ignore spaces and newline sequence
+
+	// TODO: maxLineWidth = 50 for base64 encoding
 }
 
 // Creates new Decoder that reads from r using provided schemas.
@@ -371,7 +373,7 @@ func (d *Decoder) fillStruct(struc reflect.Value, m map[string]string, schema Sc
 			if fieldDesc.Type.Implements(reflect.TypeFor[VCardFieldUnmarshaler]()) {
 				for field := range schema.fields {
 					v, found := m[field]
-					if !found || field != fieldDesc.Name {
+					if !found || field != vCardName {
 						continue
 					}
 
@@ -389,7 +391,7 @@ func (d *Decoder) fillStruct(struc reflect.Value, m map[string]string, schema Sc
 
 				for field := range schema.fields {
 					v, found := m[field]
-					if !found || field != fieldDesc.Name {
+					if !found || field != vCardName {
 						continue
 					}
 

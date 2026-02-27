@@ -18,7 +18,7 @@ func decodeFromFileThenEncodeBack() {
 	if err != nil {
 		panic(err)
 	}
-	defer f.Close()
+	defer f.Close() // nolint
 
 	data, err := io.ReadAll(f)
 	if err != nil {
@@ -29,7 +29,7 @@ func decodeFromFileThenEncodeBack() {
 	fmt.Printf("original:\n%s\n", data)
 
 	m := make(map[string]string)
-	vcard.Unmarshal(data, &m)
+	_ = vcard.Unmarshal(data, &m)
 
 	b, _ := vcard.Marshal(m)
 
@@ -38,7 +38,7 @@ func decodeFromFileThenEncodeBack() {
 	// Lets marshal and unmarshal again
 
 	mm := make(map[string]string)
-	vcard.Unmarshal(b, &mm)
+	_ = vcard.Unmarshal(b, &mm)
 
 	bm, _ := vcard.Marshal(mm)
 

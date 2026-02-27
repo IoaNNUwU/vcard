@@ -11,7 +11,7 @@ func TestMultipleEncodesProduceSameResultMap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer f.Close() // nolint
 
 	data, err := io.ReadAll(f)
 	if err != nil {
@@ -19,12 +19,12 @@ func TestMultipleEncodesProduceSameResultMap(t *testing.T) {
 	}
 
 	m1 := make(map[string]string)
-	Unmarshal(data, &m1)
-	b1, err := Marshal(m1)
+	_ = Unmarshal(data, &m1)
+	b1, _ := Marshal(m1)
 
 	m2 := make(map[string]string)
-	Unmarshal(b1, &m2)
-	b2, err := Marshal(m2)
+	_ = Unmarshal(b1, &m2)
+	b2, _ := Marshal(m2)
 
 	assertMapsEq(t, m1, m2)
 	assertStringLinesEq(t, string(b1), string(b2))
@@ -35,7 +35,7 @@ func TestMultipleEncodesProduceSameResultSliceOfOneMap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer f.Close() // nolint
 
 	data, err := io.ReadAll(f)
 	if err != nil {
@@ -43,12 +43,12 @@ func TestMultipleEncodesProduceSameResultSliceOfOneMap(t *testing.T) {
 	}
 
 	s1 := make([]map[string]string, 0)
-	Unmarshal(data, &s1)
-	b1, err := Marshal(s1)
+	_ = Unmarshal(data, &s1)
+	b1, _ := Marshal(s1)
 
 	s2 := make([]map[string]string, 0)
-	Unmarshal(b1, &s2)
-	b2, err := Marshal(s2)
+	_ = Unmarshal(b1, &s2)
+	b2, _ := Marshal(s2)
 
 	assertMapsEq(t, s1[0], s2[0])
 	assertStringLinesEq(t, string(b1), string(b2))
@@ -59,7 +59,7 @@ func TestMultipleEncodesProduceSameResultSliceOfManyMap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer f.Close() // nolint
 
 	data, err := io.ReadAll(f)
 	if err != nil {
@@ -67,12 +67,12 @@ func TestMultipleEncodesProduceSameResultSliceOfManyMap(t *testing.T) {
 	}
 
 	s1 := make([]map[string]string, 0)
-	Unmarshal(data, &s1)
-	b1, err := Marshal(s1)
+	_ = Unmarshal(data, &s1)
+	b1, _ := Marshal(s1)
 
 	s2 := make([]map[string]string, 0)
-	Unmarshal(b1, &s2)
-	b2, err := Marshal(s2)
+	_ = Unmarshal(b1, &s2)
+	b2, _ := Marshal(s2)
 
 	for i := range 8 {
 		assertMapsEq(t, s1[i], s2[i])
@@ -98,7 +98,7 @@ func TestMultipleEncodesProduceSameResultMapMarshalerValue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer f.Close() // nolint
 
 	data, err := io.ReadAll(f)
 	if err != nil {
@@ -106,12 +106,12 @@ func TestMultipleEncodesProduceSameResultMapMarshalerValue(t *testing.T) {
 	}
 
 	m1 := make(map[string]customSerializableField)
-	Unmarshal(data, &m1)
-	b1, err := Marshal(m1)
+	_ = Unmarshal(data, &m1)
+	b1, _ := Marshal(m1)
 
 	m2 := make(map[string]customSerializableField)
-	Unmarshal(b1, &m2)
-	b2, err := Marshal(m2)
+	_ = Unmarshal(b1, &m2)
+	b2, _ := Marshal(m2)
 
 	assertMapsEq(t, m1, m2)
 	assertStringLinesEq(t, string(b1), string(b2))
@@ -122,7 +122,7 @@ func TestMultipleEncodesProduceSameResultSliceOfOneMapMarshalerValue(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer f.Close() // nolint
 
 	data, err := io.ReadAll(f)
 	if err != nil {
@@ -130,12 +130,12 @@ func TestMultipleEncodesProduceSameResultSliceOfOneMapMarshalerValue(t *testing.
 	}
 
 	s1 := make([]map[string]customSerializableField, 0)
-	Unmarshal(data, &s1)
-	b1, err := Marshal(s1)
+	_ = Unmarshal(data, &s1)
+	b1, _ := Marshal(s1)
 
 	s2 := make([]map[string]customSerializableField, 0)
-	Unmarshal(b1, &s2)
-	b2, err := Marshal(s2)
+	_ = Unmarshal(b1, &s2)
+	b2, _ := Marshal(s2)
 
 	assertMapsEq(t, s1[0], s2[0])
 	assertStringLinesEq(t, string(b1), string(b2))
@@ -146,7 +146,7 @@ func TestMultipleEncodesProduceSameResultSliceOfManyMapMarshalerValue(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer f.Close() // nolint
 
 	data, err := io.ReadAll(f)
 	if err != nil {
@@ -154,12 +154,12 @@ func TestMultipleEncodesProduceSameResultSliceOfManyMapMarshalerValue(t *testing
 	}
 
 	s1 := make([]map[string]customSerializableField, 0)
-	Unmarshal(data, &s1)
-	b1, err := Marshal(s1)
+	_ = Unmarshal(data, &s1)
+	b1, _ := Marshal(s1)
 
 	s2 := make([]map[string]customSerializableField, 0)
-	Unmarshal(b1, &s2)
-	b2, err := Marshal(s2)
+	_ = Unmarshal(b1, &s2)
+	b2, _ := Marshal(s2)
 
 	for i := range 8 {
 		assertMapsEq(t, s1[i], s2[i])
@@ -168,9 +168,9 @@ func TestMultipleEncodesProduceSameResultSliceOfManyMapMarshalerValue(t *testing
 }
 
 type customUser struct {
-	Name 		string `vCard:"N"`
+	Name        string `vCard:"N"`
 	DisplayName string `vCard:"FN"`
-	Desc 		string `vCard:"NAME"`
+	Desc        string `vCard:"NAME"`
 }
 
 func TestMultipleEncodesProduceSameResultStruct(t *testing.T) {
@@ -178,7 +178,7 @@ func TestMultipleEncodesProduceSameResultStruct(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer f.Close() // nolint
 
 	data, err := io.ReadAll(f)
 	if err != nil {
@@ -186,12 +186,12 @@ func TestMultipleEncodesProduceSameResultStruct(t *testing.T) {
 	}
 
 	u1 := customUser{}
-	Unmarshal(data, &u1)
-	b1, err := Marshal(u1)
+	_ = Unmarshal(data, &u1)
+	b1, _ := Marshal(u1)
 
 	u2 := customUser{}
-	Unmarshal(b1, &u2)
-	b2, err := Marshal(u2)
+	_ = Unmarshal(b1, &u2)
+	b2, _ := Marshal(u2)
 
 	assertEq(t, u1, u2)
 	assertStringLinesEq(t, string(b1), string(b2))
@@ -202,7 +202,7 @@ func TestMultipleEncodesProduceSameResultSliceOfOneStruct(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer f.Close() // nolint
 
 	data, err := io.ReadAll(f)
 	if err != nil {
@@ -210,12 +210,12 @@ func TestMultipleEncodesProduceSameResultSliceOfOneStruct(t *testing.T) {
 	}
 
 	s1 := make([]customUser, 0)
-	Unmarshal(data, &s1)
-	b1, err := Marshal(s1)
+	_ = Unmarshal(data, &s1)
+	b1, _ := Marshal(s1)
 
 	s2 := make([]customUser, 0)
-	Unmarshal(b1, &s2)
-	b2, err := Marshal(s2)
+	_ = Unmarshal(b1, &s2)
+	b2, _ := Marshal(s2)
 
 	assertEq(t, s1[0], s2[0])
 	assertStringLinesEq(t, string(b1), string(b2))
@@ -226,7 +226,7 @@ func TestMultipleEncodesProduceSameResultSliceOfManyStructs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer f.Close() // nolint
 
 	data, err := io.ReadAll(f)
 	if err != nil {
@@ -234,12 +234,12 @@ func TestMultipleEncodesProduceSameResultSliceOfManyStructs(t *testing.T) {
 	}
 
 	s1 := make([]customUser, 0)
-	Unmarshal(data, &s1)
-	b1, err := Marshal(s1)
+	_ = Unmarshal(data, &s1)
+	b1, _ := Marshal(s1)
 
 	s2 := make([]customUser, 0)
-	Unmarshal(b1, &s2)
-	b2, err := Marshal(s2)
+	_ = Unmarshal(b1, &s2)
+	b2, _ := Marshal(s2)
 
 	for i := range 8 {
 		assertEq(t, s1[i], s2[i])
@@ -248,9 +248,9 @@ func TestMultipleEncodesProduceSameResultSliceOfManyStructs(t *testing.T) {
 }
 
 type customUserMarshaler struct {
-	Name 		customSerializableField `vCard:"N"`
+	Name        customSerializableField `vCard:"N"`
 	DisplayName customSerializableField `vCard:"FN"`
-	Desc 		customSerializableField `vCard:"NAME"`
+	Desc        customSerializableField `vCard:"NAME"`
 }
 
 func TestMultipleEncodesProduceSameResultStructMarshalerField(t *testing.T) {
@@ -258,7 +258,7 @@ func TestMultipleEncodesProduceSameResultStructMarshalerField(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer f.Close() // nolint
 
 	data, err := io.ReadAll(f)
 	if err != nil {
@@ -266,12 +266,12 @@ func TestMultipleEncodesProduceSameResultStructMarshalerField(t *testing.T) {
 	}
 
 	m1 := customUserMarshaler{}
-	Unmarshal(data, &m1)
-	b1, err := Marshal(m1)
+	_ = Unmarshal(data, &m1)
+	b1, _ := Marshal(m1)
 
 	m2 := customUserMarshaler{}
-	Unmarshal(b1, &m2)
-	b2, err := Marshal(m2)
+	_ = Unmarshal(b1, &m2)
+	b2, _ := Marshal(m2)
 
 	assertEq(t, m1, m2)
 	assertStringLinesEq(t, string(b1), string(b2))
@@ -282,7 +282,7 @@ func TestMultipleEncodesProduceSameResultSliceOfOneStructMarshalerField(t *testi
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer f.Close() // nolint
 
 	data, err := io.ReadAll(f)
 	if err != nil {
@@ -290,12 +290,12 @@ func TestMultipleEncodesProduceSameResultSliceOfOneStructMarshalerField(t *testi
 	}
 
 	s1 := make([]customUserMarshaler, 0)
-	Unmarshal(data, &s1)
-	b1, err := Marshal(s1)
+	_ = Unmarshal(data, &s1)
+	b1, _ := Marshal(s1)
 
 	s2 := make([]customUserMarshaler, 0)
-	Unmarshal(b1, &s2)
-	b2, err := Marshal(s2)
+	_ = Unmarshal(b1, &s2)
+	b2, _ := Marshal(s2)
 
 	assertEq(t, s1[0], s2[0])
 	assertStringLinesEq(t, string(b1), string(b2))
@@ -306,7 +306,7 @@ func TestMultipleEncodesProduceSameResultSliceOfManyStructsMarshalerField(t *tes
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer f.Close() // nolint
 
 	data, err := io.ReadAll(f)
 	if err != nil {
@@ -314,12 +314,12 @@ func TestMultipleEncodesProduceSameResultSliceOfManyStructsMarshalerField(t *tes
 	}
 
 	s1 := make([]customUserMarshaler, 0)
-	Unmarshal(data, &s1)
-	b1, err := Marshal(s1)
+	_ = Unmarshal(data, &s1)
+	b1, _ := Marshal(s1)
 
 	s2 := make([]customUserMarshaler, 0)
-	Unmarshal(b1, &s2)
-	b2, err := Marshal(s2)
+	_ = Unmarshal(b1, &s2)
+	b2, _ := Marshal(s2)
 
 	for i := range 8 {
 		assertEq(t, s1[i], s2[i])

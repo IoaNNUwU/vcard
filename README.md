@@ -1,31 +1,76 @@
 # VCard support in Golang
 
+This package provides a simple reflection-based API to encode and decode [`vCard` documents](https://en.wikipedia.org/wiki/VCard).
+
+- API is based on `json` package from standard library.
+- `reflect` is used to automatically marshal/unmarshal user-defined types and custom fields.
+- supports field renaming using `tags`.
+- supports custom [`Schema` definition](#schema-definition) with set of built-in schemas for vCard `4.0`, `3.0`, `2.1`.
+
 This library is still **WIP** with main concern being performance. Contributions and issues are welcome.
 
-See [Examples](./examples/) for example usage.
+## Basic Usage
 
-- See [Schema definition](#schema-definition) or use built-in set of schemas via `Marshal`/`Unmarshal`
-- Create a struct or a map with names from the schema (e.g. `FN`, `N`, `TEL` are valid field/key names).
-- Use `string` or a struct that implements [`VCardFieldMarshaler`](#custom-encoding-logic)/[`VCardFieldUnmarshaler`](#custom-decoding-logic) as your fields type.
-- Use `vcard.Marshal(v any) ([]byte, error)` for encoding.
-- Use `vcard.Unmarshal(data []byte, v any) error` for decoding.
+Read vCard document using `io` module:
+```go
+file, _ := os.Open("my_vcard_file.vcf")
+data, _ := io.ReadAll(file)
+```
+### [Decode](#custom-decoding-logic) this byte slice into a Go value by providing it by a pointer to `vcard.Unmarshal` function. 
 
-### Using structs
+Decoding is only possible into a `struct`, `map` or a `slice`.
+```go
+// Unmarshal single (or first) vCard document into a map
+m := make(map[string]string)
+err := vcard.Unmarshal(data, &m)
+assert(errors.Is(err, vcard.ErrLeftoverTokens))
 
-You can tag field in a struct with `vCard:"FN"`, `vCard:"N"`, `vCard:"TEL"` to give them alternative name
+// Unmarshal multiple vCard documents into a slice of maps
+slice := make([]map[string]string, 0)
+err := vcard.Unmarshal(data, &slice)
+assert(err == nil)
+```
+Decode into a user-defined `struct`:
 ```go
 type MyUser struct {
-    Name string `vCard:"FN"`
-    Tel  string `vCard:"TEL"`
+    FullName string `vCard:"FN"`
+    Name     string `vCard:"N"`
+    TEL      string
 }
+// Unmarshal single (or first) vCard document into a struct
+u := MyUser{}
+err := vcard.Unmarshal(data, &u)
+assert(errors.Is(err, vcard.ErrLeftoverTokens))
+
+// Unmarshal multiple vCard documents into a slice of structs
+slice := make([]MyUser, 0)
+err := vcard.Unmarshal(data, &slice)
+assert(err == nil)
 ```
-- Fields have to either be a `string` or struct that implements `VCardFieldMarshaler`/`VCardFieldUnmarshaler`
-- Encoding is also allowed for `interface` fields e.g. `any` or `VCardFieldMarshaler` as a type.
 
-## Using maps
+- See [custom decoding logic](#custom-decoding-logic) if you want to use non-`string` fields in your `struct`.
 
-- Map key has to be a `string`
-- Map value has to either be a `string` or struct that implements `VCardFieldMarshaler`/`VCardFieldUnmarshaler`
+### [Encode](#custom-encoding-logic) a Go value using `vcard.Marshal` function. 
+Encoding is only possible with `struct`, `map` or a `slice`.
+```go
+// Marshal map m into a byte slice
+var m map[string]string
+bytes, err := vcard.Marshal(m)
+
+// Marshal struct into a byte slice
+var u MyUser
+bytes, err := vcard.Marshal(u)
+
+// Marshal a slice of maps into bytes
+var slice []map[string]string
+bytes, err := vcard.Marshal(slice)
+
+// Marshal a slice of structs into bytes
+var slice []MyUser
+bytes, err := vcard.Marshal(slice)
+```
+
+- See [custom encoding logic](#custom-encoding-logic) if you want to use non-`string` fields in your struct.
 
 ## Custom encoding logic
 
@@ -66,6 +111,7 @@ type MyCustomUser struct {
 ```
 
 ## Custom decoding logic
+
 `VCardFieldUnmarshaler` interface defines custom decoding logic for a single field inside VCard document.
 ```go
 type VCardFieldUnmarshaler interface {
